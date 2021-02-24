@@ -1,0 +1,4 @@
+/mandelbrot-thrust
+*.o
+*.d
+*.cpp
