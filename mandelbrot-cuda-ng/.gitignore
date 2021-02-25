@@ -1,0 +1,4 @@
+/mandelbrot-cuda-ng
+*.o
+*.d
+*.cpp
