@@ -34,7 +34,7 @@ void mandelbrot_set(float real_min, float real_max, std::size_t real_size, float
     result[i] = divergence_count(thrust::complex(real_value, imag_value));
 }
 
-inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size, float imag_min, float imag_max, std::size_t imag_size) {
+inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size, float imag_min, float imag_max, std::size_t imag_size) noexcept {
     auto result = std::vector<int>(real_size * imag_size);
 
     int* result_device;
@@ -50,7 +50,7 @@ inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size
     return std::make_tuple(result, real_size, imag_size);
 }
 
-inline auto mandelbrot_set(float real_min, float real_max, float imag_min, float imag_max) {
+inline auto mandelbrot_set(float real_min, float real_max, float imag_min, float imag_max) noexcept {
     auto [real_size, imag_size] = [&]() {
         auto real_diff = real_max - real_min;
         auto imag_diff = imag_max - imag_min;
@@ -66,7 +66,6 @@ inline auto mandelbrot_set(float real_min, float real_max, float imag_min, float
 
 int main(int argc, char** argv) {
     first_cudaMalloc_is_too_slow();
-
     cuda_check(cudaDeviceSynchronize());
 
     util::timeit([&]() {
