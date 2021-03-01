@@ -1,5 +1,5 @@
 NVCC      = nvcc
-NVCCFLAGS = -std=c++17 -arch=sm_61 --expt-relaxed-constexpr
+NVCCFLAGS = -std=c++17 -arch=sm_61 --extended-lambda
 CXXFLAGS  = -std=c++17 -O3 -Wall -march=native
 LDFLAGS   = -L/opt/cuda/targets/x86_64-linux/lib/ -lcudart
 

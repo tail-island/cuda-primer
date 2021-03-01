@@ -10,14 +10,12 @@
 #include "../util/cudautil.hpp"
 #include "../util/util.hpp"
 
-struct is_in_circle {
-    __device__
-    bool operator()(const thrust::tuple<float, float>& p) const noexcept {
-        return std::pow(thrust::get<0>(p), 2) + std::pow(thrust::get<1>(p), 2) <= 1.0f;
-    }
-};
+__device__
+inline auto is_in_circle(float x, float y) noexcept {
+    return std::pow(x, 2) + std::pow(y, 2) <= 1.0f;
+}
 
-inline auto monte_carlo_pi(int n, unsigned long seed) noexcept {
+inline float monte_carlo_pi(int n, unsigned long seed) noexcept {
     auto rng = curandGenerator_t();
     // curand_check(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_MT19937));
     curand_check(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_MTGP32));
@@ -30,7 +28,11 @@ inline auto monte_carlo_pi(int n, unsigned long seed) noexcept {
     curand_check(curandGenerateUniform(rng, ys.data().get(), n));
 
     auto it = thrust::make_zip_iterator(thrust::make_tuple(std::begin(xs), std::begin(ys)));
-    auto c  = thrust::count_if(it, it + n, is_in_circle());
+    auto c  = thrust::count_if(it, it + n,
+        [=] __device__ (const thrust::tuple<float, float>& p) {
+            return is_in_circle(thrust::get<0>(p), thrust::get<1>(p));
+        }
+    );
 
     return 4.0f * static_cast<float>(c) / static_cast<float>(n);
 }

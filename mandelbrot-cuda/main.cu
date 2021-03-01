@@ -26,12 +26,24 @@ inline auto divergence_count(const thrust::complex<float>& c) noexcept {
 
 __global__
 void mandelbrot_set(float real_min, float real_max, std::size_t real_size, float imag_min, float imag_max, std::size_t imag_size, int* result) {
-    const auto i = blockDim.x * blockIdx.x + threadIdx.x;
+    const auto real_index = blockDim.x * blockIdx.x + threadIdx.x;
+    const auto imag_index = blockDim.y * blockIdx.y + threadIdx.y;
 
-    const auto real_value = real_min + (real_max - real_min) / static_cast<float>(real_size - 1) * static_cast<float>(threadIdx.x);
-    const auto imag_value = imag_min + (imag_max - imag_min) / static_cast<float>(imag_size - 1) * static_cast<float>(blockIdx.x);
+    if (real_index > real_size || imag_index > imag_size) {
+        return;
+    }
 
-    result[i] = divergence_count(thrust::complex(real_value, imag_value));
+    const auto real_value = real_min + (real_max - real_min) / static_cast<float>(real_size - 1) * static_cast<float>(real_index);
+    const auto imag_value = imag_min + (imag_max - imag_min) / static_cast<float>(imag_size - 1) * static_cast<float>(imag_index);
+
+    result[imag_index * real_size + real_index] = divergence_count(thrust::complex(real_value, imag_value));
+
+    // const auto i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    // const auto real_value = real_min + (real_max - real_min) / static_cast<float>(real_size - 1) * static_cast<float>(threadIdx.x);
+    // const auto imag_value = imag_min + (imag_max - imag_min) / static_cast<float>(imag_size - 1) * static_cast<float>(blockIdx.x);
+
+    // result[i] = divergence_count(thrust::complex(real_value, imag_value));
 }
 
 inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size, float imag_min, float imag_max, std::size_t imag_size) noexcept {
@@ -40,7 +52,8 @@ inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size
     int* result_device;
     cuda_check(cudaMalloc(&result_device, sizeof(int) * real_size * imag_size));
 
-    mandelbrot_set<<<imag_size, real_size>>>(real_min, real_max, real_size, imag_min, imag_max, imag_size, result_device);
+    mandelbrot_set<<<dim3((real_size + 16 - 1) / 16, (imag_size + 16 - 1) / 16), dim3(16, 16)>>>(real_min, real_max, real_size, imag_min, imag_max, imag_size, result_device);
+    // mandelbrot_set<<<imag_size, real_size>>>(real_min, real_max, real_size, imag_min, imag_max, imag_size, result_device);
     cuda_check(cudaGetLastError());
 
     cuda_check(cudaMemcpy(result.data(), result_device, sizeof(int) * real_size * imag_size, cudaMemcpyDeviceToHost));
