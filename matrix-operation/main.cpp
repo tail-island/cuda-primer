@@ -7,12 +7,20 @@ const std::size_t M = 1001;
 const std::size_t N = 1002;
 const std::size_t K = 1003;
 
+// inline auto matmul(const std::vector<float>& matrix_a, const std::vector<float>& matrix_b, std::vector<float>& matrix_c, std::size_t size_m, std::size_t size_n, std::size_t size_k) noexcept {
+//     for (auto i = 0_z; i < size_m; ++i) {
+//         for (auto j = 0_z; j < size_n; ++j) {
+//             for (auto k = 0_z; k < size_k; ++k) {
+//                 matrix_c[i * size_n + j] += matrix_a[i * size_k + k] * matrix_b[k * size_n + j];
+//             }
+//         }
+//     }
+// }
+
 inline auto matmul(const std::vector<float>& matrix_a, const std::vector<float>& matrix_b, std::vector<float>& matrix_c, std::size_t size_m, std::size_t size_n, std::size_t size_k) noexcept {
     for (auto i = 0_z; i < size_m; ++i) {
-        for (auto j = 0_z; j < size_n; ++j) {
-            matrix_c[i * size_n + j] = 0.0f;
-
-            for (auto k = 0_z; k < size_k; ++k) {
+        for (auto k = 0_z; k < size_k; ++k) {
+            for (auto j = 0_z; j < size_n; ++j) {
                 matrix_c[i * size_n + j] += matrix_a[i * size_k + k] * matrix_b[k * size_n + j];
             }
         }
@@ -20,14 +28,15 @@ inline auto matmul(const std::vector<float>& matrix_a, const std::vector<float>&
 }
 
 int main(int argc, char** argv) {
-    auto a = util::linspace(0.0f, 1.0f, M * K);
-    auto b = util::linspace(0.0f, 1.0f, K * N);
-    auto c = std::vector<float>(M * N, 0.0f);
+    const auto a = util::linspace(0.0f, 1.0f, M * K);
+    const auto b = util::linspace(0.0f, 1.0f, K * N);
 
     util::timeit([&]() {
+        auto c = std::vector<float>(M * N, 0.0f);
         matmul(a, b, c, M, N, K);
     });
 
+    auto c = std::vector<float>(M * N, 0.0f);
     matmul(a, b, c, M, N, K);
 
     std::cout << c[0        ] << std::endl;

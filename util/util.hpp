@@ -10,10 +10,10 @@ namespace util {
     inline auto linspace(T start, T stop, std::size_t size) noexcept {
         auto result = std::vector<T>(size);
 
-        auto delta = (stop - start) / static_cast<T>(size - 1);
+        const auto delta = (stop - start) / static_cast<T>(size - 1);
 
         for (auto i = static_cast<std::size_t>(0); i < size; ++i) {
-            result[i] = start + delta * i;
+            result[i] = start + delta * static_cast<T>(i);
         }
 
         return result;
@@ -24,7 +24,7 @@ namespace util {
         auto t = 0_z;
 
         for (auto i = 0; i < 10; ++i) {
-            auto start = std::chrono::system_clock::now();
+            const auto start = std::chrono::system_clock::now();
 
             functor();
 

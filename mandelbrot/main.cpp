@@ -23,8 +23,8 @@ inline auto divergence_count(const std::complex<float>& c) noexcept {
 inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size, float imag_min, float imag_max, std::size_t imag_size) noexcept {
     auto result = std::vector<int>(); result.reserve(real_size * imag_size);
 
-    for (auto imag: util::linspace<float>(imag_min, imag_max, imag_size)) {
-        for (auto real: util::linspace<float>(real_min, real_max, real_size)) {
+    for (const auto& imag: util::linspace<float>(imag_min, imag_max, imag_size)) {
+        for (const auto& real: util::linspace<float>(real_min, real_max, real_size)) {
             result.emplace_back(divergence_count(std::complex(real, imag)));
         }
     }
@@ -33,13 +33,13 @@ inline auto mandelbrot_set(float real_min, float real_max, std::size_t real_size
 }
 
 inline auto mandelbrot_set(float real_min, float real_max, float imag_min, float imag_max) noexcept {
-    auto [real_size, imag_size] = [&]() {
-        auto real_diff = real_max - real_min;
-        auto imag_diff = imag_max - imag_min;
+    const auto [real_size, imag_size] = [&]() {
+        const auto real_diff = real_max - real_min;
+        const auto imag_diff = imag_max - imag_min;
 
         return std::make_tuple(
-            static_cast<std::size_t>(1024 * std::min(real_diff / imag_diff, 1.0f)),
-            static_cast<std::size_t>(1024 * std::min(imag_diff / real_diff, 1.0f))
+            static_cast<std::size_t>(1000 * std::min(real_diff / imag_diff, 1.0f)),
+            static_cast<std::size_t>(1000 * std::min(imag_diff / real_diff, 1.0f))
         );
     }();
 
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         mandelbrot_set(-2.0f, 2.0f, -2.0f, 2.0f);
     });
 
-    auto [v, w, h] = mandelbrot_set(-2.0f, 2.0f, -2.0f, 2.0f);
+    const auto [v, w, h] = mandelbrot_set(-2.0f, 2.0f, -2.0f, 2.0f);
 
     {
         auto it = std::begin(v);

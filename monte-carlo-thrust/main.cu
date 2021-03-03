@@ -15,7 +15,7 @@ inline auto is_in_circle(float x, float y) noexcept {
     return std::pow(x, 2) + std::pow(y, 2) <= 1.0f;
 }
 
-inline float monte_carlo_pi(int n, unsigned long seed) noexcept {
+inline float monte_carlo_pi(int n, unsigned long long seed) noexcept {
     auto rng = curandGenerator_t();
     // curand_check(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_MT19937));
     curand_check(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_MTGP32));
@@ -28,7 +28,7 @@ inline float monte_carlo_pi(int n, unsigned long seed) noexcept {
     curand_check(curandGenerateUniform(rng, ys.data().get(), n));
 
     auto it = thrust::make_zip_iterator(thrust::make_tuple(std::begin(xs), std::begin(ys)));
-    auto c  = thrust::count_if(it, it + n,
+    const auto c = thrust::count_if(it, it + n,
         [=] __device__ (const thrust::tuple<float, float>& p) {
             return is_in_circle(thrust::get<0>(p), thrust::get<1>(p));
         }
@@ -39,14 +39,13 @@ inline float monte_carlo_pi(int n, unsigned long seed) noexcept {
 
 int main(int argc, char** argv) {
     first_cudaMalloc_is_too_slow();
-
     cuda_check(cudaDeviceSynchronize());
 
     util::timeit([]() {
-        monte_carlo_pi(100'000'000, 0ul);
+        monte_carlo_pi(100'000'000, 0ull);
     });
 
-    std::cout << monte_carlo_pi(100'000'000, 0ul) << std::endl;
+    std::cout << monte_carlo_pi(100'000'000, 0ull) << std::endl;
 
     return 0;
 }
