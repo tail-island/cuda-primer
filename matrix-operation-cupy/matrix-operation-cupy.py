@@ -9,16 +9,12 @@ N = 1002
 K = 1003
 
 
-def matmul(a, b):
-    return cp.matmul(a, b)
-
-
 a = cp.reshape(cp.array(np.linspace(0.0, 1.0, M * K), dtype=cp.float32), (M, K))
 b = cp.reshape(cp.array(np.linspace(0.0, 1.0, K * N), dtype=cp.float32), (K, N))
 
-print(f'{timeit.timeit(stmt=lambda: matmul(a, b), number=10) / 10}', file=sys.stderr)
+print(f'{timeit.timeit(stmt=lambda: cp.matmul(a, b), number=10) / 10}', file=sys.stderr)
 
-c = matmul(a, b)
+c = cp.matmul(a, b)
 
 print(c[0][0])
 print(c[0][1])

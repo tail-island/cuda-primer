@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 
+#include <cuda.h>
 #include <curand.h>
 #include <thrust/count.h>
 #include <thrust/device_vector.h>

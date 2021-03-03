@@ -4,6 +4,7 @@
 #include <tuple>
 #include <vector>
 
+#include <cuda.h>
 #include <thrust/complex.h>
 
 #include "../util/cudautil.hpp"

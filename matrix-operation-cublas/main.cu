@@ -1,8 +1,8 @@
 #include <iostream>
 #include <vector>
 
-#include <cuda.h>
 #include <cublas_v2.h>
+#include <cuda.h>
 #include <thrust/device_vector.h>
 
 #include "../util/cudautil.hpp"
