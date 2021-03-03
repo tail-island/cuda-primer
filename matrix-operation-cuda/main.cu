@@ -14,8 +14,8 @@ const std::size_t K = 1003;
 
 __global__
 void matmul(const float* matrix_a, const float* matrix_b, float* matrix_c, std::size_t size_m, std::size_t size_n, std::size_t size_k) {
-    const auto i = blockDim.y * blockIdx.y + threadIdx.y;
-    const auto j = blockDim.x * blockIdx.x + threadIdx.x;
+    const auto i = blockIdx.y * blockDim.y + threadIdx.y;
+    const auto j = blockIdx.x * blockDim.x+ threadIdx.x;
 
     if (i >= size_m || j >= size_n) {
         return;
@@ -66,8 +66,8 @@ int main(int argc, char** argv) {
 
 // __global__
 // void matmul(float* matrix_a, float* matrix_b, float* matrix_c, std::size_t size_m, std::size_t size_n, std::size_t size_k) {
-//     const auto i = blockDim.y * blockIdx.y + threadIdx.y;
-//     const auto k = blockDim.x * blockIdx.x + threadIdx.x;
+//     const auto i = blockIdx.y * blockDim.y + threadIdx.y;
+//     const auto k = blockIdx.x * blockDim.x + threadIdx.x;
 
 //     if (i >= size_m || k >= size_k) {
 //         return;

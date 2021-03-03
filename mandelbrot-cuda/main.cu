@@ -26,8 +26,8 @@ inline auto divergence_count(const thrust::complex<float>& c) noexcept {
 
 __global__
 void mandelbrot_set(float real_min, float real_max, std::size_t real_size, float imag_min, float imag_max, std::size_t imag_size, int* result) {
-    const auto i = blockDim.y * blockIdx.y + threadIdx.y;
-    const auto j = blockDim.x * blockIdx.x + threadIdx.x;
+    const auto i = blockIdx.y * blockDim.y + threadIdx.y;
+    const auto j = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (i >= imag_size || j >= real_size) {  // imag_indexがimag_sizeを超えることはないのですけど、パターン化しておいたほうがバグが減るので。
         return;
