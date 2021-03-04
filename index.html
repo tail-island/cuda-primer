@@ -628,28 +628,30 @@
 <span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> ys = thrust::device_vector&lt;<span class="dt">float</span>&gt;(n);  <span class="co">// yについても、同様に生成します。</span></span>
 <span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    curand_check(curandGenerateUniform(rng, ys.data().get(), n));</span>
 <span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> it = thrust::make_zip_iterator(thrust::make_tuple(<span class="bu">std::</span>begin(xs), <span class="bu">std::</span>begin(ys)));  <span class="co">// xとyで2つの乱数が必要なので、thrust::make_zip_iteratorで一つにまとめます。</span></span>
-<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="kw">auto</span> c = thrust::count_if(it, it + n,  <span class="co">// thrust::count_ifで、ラムダ式が真となった場合の数を数えます。</span></span>
-<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>        [=] __device__ (<span class="at">const</span> <span class="kw">auto</span>&amp; p) {</span>
-<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> is_in_circle(thrust::get&lt;<span class="dv">0</span>&gt;(p), thrust::get&lt;<span class="dv">1</span>&gt;(p));  <span class="co">// make_zip_iteratorはthrust::tupleを要素に持つので、get&lt;0&gt;()とget&lt;1&gt;()でタプルの要素を取得します。</span></span>
-<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>    );</span>
-<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">4.0</span><span class="bu">f</span> * <span class="kw">static_cast</span>&lt;<span class="dt">float</span>&gt;(c) / <span class="kw">static_cast</span>&lt;<span class="dt">float</span>&gt;(n);</span>
-<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span>** argv) {</span>
-<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>    first_cudaMalloc_is_too_slow();  <span class="co">// 一回目のcudaMallocは遅いので、タイム計測に影響しないように一回cudaMallocしておきます。</span></span>
-<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>    cuda_check(cudaDeviceSynchronize());  <span class="co">// CUDAの関数呼び出しは非同期なので、タイム計測に影響しないようにGPU上の処理が終わるまで待ちます。</span></span>
-<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>    util::timeit([]() {</span>
-<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>        monte_carlo_pi(<span class="dv">100&#39;000&#39;000</span>, <span class="dv">0</span><span class="bu">ull</span>);</span>
-<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>    });</span>
-<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout &lt;&lt; monte_carlo_pi(<span class="dv">100&#39;000&#39;000</span>, <span class="dv">0</span><span class="bu">ul</span>) &lt;&lt; <span class="bu">std::</span>endl;</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>    curand_check(curandDestroyGenerator(rng));  <span class="co">// 乱数ジェネレーターを破棄します。</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> it = thrust::make_zip_iterator(thrust::make_tuple(<span class="bu">std::</span>begin(xs), <span class="bu">std::</span>begin(ys)));  <span class="co">// xとyで2つの乱数が必要なので、thrust::make_zip_iteratorで一つにまとめます。</span></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="kw">auto</span> c = thrust::count_if(it, it + n,  <span class="co">// thrust::count_ifで、ラムダ式が真となった場合の数を数えます。</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>        [=] __device__ (<span class="at">const</span> <span class="kw">auto</span>&amp; p) {</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> is_in_circle(thrust::get&lt;<span class="dv">0</span>&gt;(p), thrust::get&lt;<span class="dv">1</span>&gt;(p));  <span class="co">// make_zip_iteratorはthrust::tupleを要素に持つので、get&lt;0&gt;()とget&lt;1&gt;()でタプルの要素を取得します。</span></span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>    );</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">4.0</span><span class="bu">f</span> * <span class="kw">static_cast</span>&lt;<span class="dt">float</span>&gt;(c) / <span class="kw">static_cast</span>&lt;<span class="dt">float</span>&gt;(n);</span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span>** argv) {</span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>    first_cudaMalloc_is_too_slow();  <span class="co">// 一回目のcudaMallocは遅いので、タイム計測に影響しないように一回cudaMallocしておきます。</span></span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>    cuda_check(cudaDeviceSynchronize());  <span class="co">// CUDAの関数呼び出しは非同期なので、タイム計測に影響しないようにGPU上の処理が終わるまで待ちます。</span></span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>    util::timeit([]() {</span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>        monte_carlo_pi(<span class="dv">100&#39;000&#39;000</span>, <span class="dv">0</span><span class="bu">ull</span>);</span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    });</span>
 <span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
-<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout &lt;&lt; monte_carlo_pi(<span class="dv">100&#39;000&#39;000</span>, <span class="dv">0</span><span class="bu">ul</span>) &lt;&lt; <span class="bu">std::</span>endl;</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>メモリ管理はThrust任せで、乱数の生成はcuRAND任せです。cuRANDを使うにはGPUのメモリのアドレスが必要なのですけど、それは<code>thrust::vector</code>に対して<code>data().get()</code>すれば取得できるので大丈夫。今回のように一様乱数が必要なのであれば<code>curandGenerateUniform()</code>を、正規乱数が必要なのであれば<code>curandGenerateNormal()</code>を使用してください。あとは、必要に応じて乱数を生成するのではなくて、事前に大量に乱数を生成しておくようにプログラムの構造を変更するだけです。ほら、CUDAでモンテカルロ法をやるのはとても簡単でしょ？</p>
 <p>実行してみましょう。円周率は3.14163となったのでCPUとほぼ同じ結果（乱数のシード次第でもっと良い結果も悪い結果も出ます）、それなのに実行時間はたったの0.098083秒、CPU（0.608123秒）の6.2倍も高速です！　今回の処理だと高速化の割合があまり大きくないですけど、これは、シミュレーションの内容があまりに単純なためです。もっと普通のシミュレーションをするなら、モンテカルロ法のCUDA化効果は絶大ですよ。cuRANDとThrustを使えば、プログラミングはとても簡単ですしね。ぜひ、CUDAでモンテカルロ法をやりまくってみてください。</p>
 <h1 id="行列演算はそこそこ簡単にものすごく高速化できます">行列演算は、そこそこ簡単にものすごく高速化できます</h1>

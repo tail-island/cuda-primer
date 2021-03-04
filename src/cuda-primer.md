@@ -604,6 +604,8 @@ inline float monte_carlo_pi(int n, unsigned long long seed) noexcept {
     auto ys = thrust::device_vector<float>(n);  // yについても、同様に生成します。
     curand_check(curandGenerateUniform(rng, ys.data().get(), n));
 
+    curand_check(curandDestroyGenerator(rng));  // 乱数ジェネレーターを破棄します。
+
     auto it = thrust::make_zip_iterator(thrust::make_tuple(std::begin(xs), std::begin(ys)));  // xとyで2つの乱数が必要なので、thrust::make_zip_iteratorで一つにまとめます。
     const auto c = thrust::count_if(it, it + n,  // thrust::count_ifで、ラムダ式が真となった場合の数を数えます。
         [=] __device__ (const auto& p) {
