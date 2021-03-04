@@ -291,7 +291,7 @@
 <p>まずは、2つある内の下の方の<code>mandelbrot_set()</code>を見てみてください。<code>cudaMalloc()</code>したり<code>cudaMemcpy()</code>したり<code>cudaFree()</code>したりしています。なぜこんな面倒なことをしているかというと、<em>GPUのメモリとCPUのメモリは異なる</em>ためです。</p>
 <p><img src="./image/cpu-and-gpu-memory.png" alt="GPUのメモリとCPUのメモリは異なる" /></p>
 <p>だから、<code>std::vector</code>でCPUのメモリに場所を確保したのとは別に<code>cudaMalloc()</code>でGPUのメモリを確保して、で、GPUのメモリ上に生成されたマンデルブロ集合の情報を<code>cudaMemcpy()</code>でCPUのメモリに転送してあげなければなりません。また、確保したメモリは開放しなければならないので、<code>cudaFree()</code>を呼ぶのも忘れてはなりません（実は後述するThrustを使うと少し楽ができるのですけど）。あ、関数の引数は、普通に渡しても大丈夫です。そうじゃないと、そもそもGPUのメモリ・アドレスを渡せないですしね。</p>
-<p>あと、CUDAの関数は例外を使用していないので、戻り値を使ってエラー・チェックしなければなりません。あぁ面倒くせぇけど、これはエラー・チェック用の関数を作成すれば少し楽になります。今回は<code>cuda_check()</code>という関数を作成しました。</p>
+<p>あと、CUDAの関数は例外を使用していないので、戻り値を使ってエラー・チェックしなければなりません。あぁ面倒くせぇけど、これはエラー・チェック用の関数を作成することで少し楽になります。今回は<code>cuda_check()</code>という関数を作成しました。</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdlib&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cuda.h&gt;</span></span>
