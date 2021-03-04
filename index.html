@@ -104,7 +104,7 @@
 <article class="markdown-body">
 <p>上司に「この処理、もっと高速化して」と言われて、「コンピューターを何百台も用意するとか、金を湯水のように注ぎ込んで強力なクラウドを借りるとか、数億円かけてASIC（Application Specific Integrated Circuit）を作ってみたらでどうでしょうか？」と答えたら怒られました。Google様ならこの答えを鼻歌交じりで実行できるんだろうけど、Google様は私なんかを雇ってくれないしなぁ……。</p>
 <p>しょうがないので、アルゴリズムの改良……はまず最初にやるべきで、で、もしすでにアルゴリズムを改良した後なのであれば、GPGPU（General-Purpose computing on Graphics Processing Units）なんてどうでしょうか？</p>
-<p>本稿では、GPGPUの一つであるCUDAを使用して、プログラムを高速化する様々な方法を述べます。コードは<a href="https://github.com/tail-island/cuda-primer">GitHub</a>にありますので、クローンしてみてください。</p>
+<p>本稿では、GPGPUの一つであるCUDAを使用して、プログラムを高速化する様々な方法を述べます。コードは<a href="https://github.com/tail-island/cuda-primer">GitHub</a>にあります。開発に使用した環境はArch Linuxです。</p>
 <h1 id="gpuは遅い">GPUは遅い……</h1>
 <p>まず最初に理解していただきたいこと、それは、GPUは遅いということです。足し算や掛け算を普通にやらせたら、実は、GPUの速度はCPUの足元にも及びません。</p>
 <p>試してみましょう。題材は私のようなおっさんプログラマが泣いて喜ぶ<a href="https://ja.wikipedia.org/wiki/%E3%83%9E%E3%83%B3%E3%83%87%E3%83%AB%E3%83%96%E3%83%AD%E9%9B%86%E5%90%88">マンデルブロ集合</a>です。まずは、<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot">素のC++17</a>で作ってみました。</p>
@@ -559,7 +559,7 @@
 <p>と、これでCUDAの面倒だったところが解消されました。Thrustの効果は上のコードを見れば明らかでしょう。CUDAなのに、普通の簡潔なコードになっています！　しかもこのコードはとても高速なんですよ。実行してみたら、0.000877秒で完了しちゃいました！　CPU（0.101171秒）の115.4倍、素のCUDA（0.001492秒）の1.7倍も高速です。nvprofで見てもGPU内の処理時間は変わっていないのでどんなすごいテクニックを使っているのかは私ではよくわからない（APIの呼び出し方が工夫されまくっているんだと思う）のですけど、高速すぎて困ることはないので良し！</p>
 <h1 id="モンテカルロ法を高速化してみるのはどうでしょうか">モンテカルロ法を高速化してみるのは、どうでしょうか？</h1>
 <p>さて、先程のコードをよく見てみると、<code>divergence_count()</code>の中にもループがあります。せっかくなのでこのループもCUDA化しちゃう……のは残念だけど無理です。前の繰り返しの結果である<code>z</code>の値を次の繰り返しで使用しているから、並列化できないんです。こんな感じで、CUDAは使いどころが難しい……。でもせっかくThrustで楽にCUDAできるようになったのだから、もっといろいろCUDA化してみたい。</p>
-<p>というわけで、並列化が可能で、しかも並列化の効果が大きそうな場合が何かないかと考えてみたところ、<a href="https://ja.wikipedia.org/wiki/%E3%83%A2%E3%83%B3%E3%83%86%E3%82%AB%E3%83%AB%E3%83%AD%E6%B3%95">モンテカルロ法</a>を思いつきました。ランダムな値で何度もシミュレーションを実行して推論するアレですね。そのために、まずは<a href="https://github.com/tail-island/cuda-primer/tree/main/monte-carlo">素のC++でモンテカルロ法で円周率を計算するプログラム</a>を作ってみました。</p>
+<p>というわけで、並列化が可能で、しかも並列化の効果が大きそうな場合が何かないかと考えてみたところ、<a href="https://ja.wikipedia.org/wiki/%E3%83%A2%E3%83%B3%E3%83%86%E3%82%AB%E3%83%AB%E3%83%AD%E6%B3%95">モンテカルロ法</a>を思いつきました。ランダムな値で何度もシミュレーションを実行した結果から推論するアレですね。そのために、まずは<a href="https://github.com/tail-island/cuda-primer/tree/main/monte-carlo">素のC++でモンテカルロ法で円周率を計算するプログラム</a>を作ってみました。</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -651,7 +651,7 @@
 <span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
 <span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>メモリ管理はThrust任せで、乱数の生成はcuRAND任せです。cuRANDを使うにはGPUのメモリのアドレスが必要なのですけど、それは<code>thrust::vector</code>に対して<code>data().get()</code>すれば取得できます。今回のように一様乱数が必要なのであれば<code>curandGenerateUniform()</code>を、正規乱数が必要なのであれば<code>curandGenerateNormal()</code>を使用してください。あとは、必要に応じて乱数を生成するのではなくて、事前に大量に乱数を生成しておくようにプログラムの構造を変更するだけです。ほら、CUDAでモンテカルロ法をやるのはとても簡単でしょ？</p>
-<p>実行してみましょう。円周率は3.14163となったのでCPUとほぼ同じ結果（乱数のシード次第でもっと良い結果も悪い結果も出ます）、それなのに実行時間はたったの0.098083秒、CPU（0.608123秒）の6.2倍も高速です！　今回の処理だと高速化の割合があまり大きくないですけど、これは、シミュレーションの内容があまりに単純なため。普通にいろいろシミュレーションをする場合なら、モンテカルロ法のCUDA化効果は絶大です。cuRANDとThrustを使えば、プログラミングはとても簡単ですしね。ぜひ、CUDAでモンテカルロ法をやりまくってみてください。</p>
+<p>実行してみましょう。円周率は3.14163となったのでCPUとほぼ同じ結果（乱数のシード次第でもっと良い結果も悪い結果も出ます）、それなのに実行時間はたったの0.098083秒、CPU（0.608123秒）の6.2倍も高速です！　今回の処理だと高速化の割合があまり大きくないですけど、これは、シミュレーションの内容があまりに単純なためです。もっと普通のシミュレーションをする場合なら、モンテカルロ法のCUDA化効果は絶大ですよ。cuRANDとThrustを使えば、プログラミングはとても簡単ですしね。ぜひ、CUDAでモンテカルロ法をやりまくってみてください。</p>
 <h1 id="行列演算はそこそこ簡単にものすごく高速化できます">行列演算は、そこそこ簡単にものすごく高速化できます</h1>
 <p>さて、世の中には頭が良い人がいっぱいいて、彼ら彼女らはいろんな物事を数式で表現します（私は頭が良くないので、数式から逃げて生きているけど）。しかも、奴らの数式は、行列を使いまくるんです（私は、vector（ベクター）がドイツ語のvektor（ベクトル）の英語読みだと最近気がついたレベルだけど）。でも、行列の演算で表現することは、物事を単純化してくれる上に、高速化の可能性をもたらしてくれる素晴らしい方式なんですよ。頭が良い人が式を分かりやすく書き下してくれれば、私のような文系のおっさんでもプログラミング可能だしね。</p>
 <p>というわけで好き嫌いはともかくとして行列プログラミングはやっぱり必要なので、「行列 積」で検索して見つかったページを参考にして作ったのが以下のコードです。<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation">M行K列の行列とK行N列の掛け算</a>ですね。手で計算する場合の処理を、そのままプログラミングしました。</p>
@@ -861,9 +861,9 @@
 <span id="cb18-67"><a href="#cb18-67" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-68"><a href="#cb18-68" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
 <span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<p>BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で、型がfloatならばsingleのSが接頭語についてSGEMMになります。cuBLASでは<code>cublasSgemm()</code>という関数がそれ。このcuBLASの関数を呼び出すには、cuBLASのハンドルが必要です。だから、上のコードではまずは<code>cublasCreate()</code>関数でハンドルを生成しています。で、すべてのcuBLASの呼び出しが完了したら、<code>cublasDestroy()</code>でハンドルを破棄します。これでハンドルの問題はなくなったので、あとは普通に行列を作成して……とやっては駄目。というのも、cuBLASの行列はFORTLANの行列との互換性から、列優先なんですよ。</p>
+<p>BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で、型がfloatならばsingleのSが接頭語についてSGEMMになります。cuBLASでは<code>cublasSgemm()</code>という関数がそれ。このcuBLASの関数を呼び出すには、cuBLASのハンドルが必要です。だから、上のコードではまずは<code>cublasCreate()</code>関数でハンドルを生成しています。で、すべてのcuBLASの呼び出しが完了したら、<code>cublasDestroy()</code>でハンドルを破棄します。これでハンドルの問題はなくなったので、あとは普通に行列を作成して……とやっては駄目。なぜかというと、cuBLASの行列はFORTLANの行列との互換性で列優先なんですよ。</p>
 <p>図</p>
-<p>今回は、楽をするために適当な<code>transpose()</code>関数を作成してごまかしましたが、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……</p>
+<p>今回は、楽をするために適当な<code>transpose()</code>関数を作成してごまかしましたけど、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 普通のC++で行列を作る。</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m = <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;(Y * X);</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -872,7 +872,7 @@
 <span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        m[y * X + x] = ...</span>
 <span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<p>cuBLASを使うなら、列優先なので以下のようなコードになります。</p>
+<p>cuBLASを使う場合は、列優先なので以下のようなコードになります。</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 列優先の行列を作る。</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m = <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;(X * Y);</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -887,7 +887,8 @@
 <p>これで準備はすべて整いましたので、<code>cublasSgemm()</code>を呼び出します。最初の引数はハンドル、<code>CUBLAS_OP_N</code>は<code>a_device.data().get()</code>や<code>b_device.data().get()</code>に何も手を加えずにそのまま掛け算するという意味、2回目の<code>M</code>と<code>K</code>と<code>M</code>は、<code>cublasSetMatrix()</code>の時と同じで大きな行列の一部を使えるようにするという理由で存在しているので、行列全体を使用する今回はそのまま<code>M</code>と<code>K</code>と<code>N</code>を使います。</p>
 <p>というわけで、関数名が分かりづらかったり行列が列優先だったりでちょっと面倒くさそうなcuBLASでしたけど、その効果は絶大です。なんと、cuBLASを使用したこのコード、0.0005763秒で処理が完了するんです！　普通に書いたCUDA版（0.0153324秒）の3.8%の処理時間なので26.6倍です。C++改良版（0.0946229秒）と比較すれば、0.6%の処理時間なので速度は164.2倍です！　cuBLAS速すぎ。cuBLASを使わずに行列演算を自作するのは、人生の無駄づかいですよ。</p>
 <p>というわけで、ほら、行列演算をそこそこ簡単にものすごく高速化できたでしょ？　行列演算が遅いという場合はぜひcuBLASを使ってしてみてください。</p>
-<p>他にも、複数のGPUに対応した<a href="https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api">cuBLASXt</a>や疎行列向けの<a href="https://docs.nvidia.com/cuda/cusparse/index.html">cuSPARSE</a>というライブラリもありますので、いろいろと検討してみてください。あと、CUDAライブラリではないですけど、<a href="https://www.preferred.jp/ja/projects/cupy/">CuPy</a>もとても良い。Pythonのライブラリで、結構速くて、NumPy互換なのでとてもプログラミングがとにかく楽。<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy">CuPyを使っで今回の行列演算をやってみた</a>ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいに簡単にプログラミングできました。</p>
+<hr />
+<p>本稿で紹介した他にも、複数のGPUに対応した<a href="https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api">cuBLASXt</a>や疎行列向けの<a href="https://docs.nvidia.com/cuda/cusparse/index.html">cuSPARSE</a>というライブラリもありますので、ぜひ検討してみてください。あと、CUDAライブラリではないですけど、<a href="https://www.preferred.jp/ja/projects/cupy/">CuPy</a>も最高です。Pythonのライブラリで、結構速くて、NumPy互換なのでプログラミングがとにかく楽です。<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy">CuPyを使っで今回の行列演算をやってみた</a>ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいにプログラミングが簡単でした。</p>
 <p>いやぁ、CUDA（＋ライブラリ）は楽ちんにいろいろと高速化ができて、とにかく面白いですな。</p>
 </article>
 </body>

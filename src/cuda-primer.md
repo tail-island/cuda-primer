@@ -2,7 +2,7 @@
 
 しょうがないので、アルゴリズムの改良……はまず最初にやるべきで、で、もしすでにアルゴリズムを改良した後なのであれば、GPGPU（General-Purpose computing on Graphics Processing Units）なんてどうでしょうか？
 
-本稿では、GPGPUの一つであるCUDAを使用して、プログラムを高速化する様々な方法を述べます。コードは[GitHub](https://github.com/tail-island/cuda-primer)にありますので、クローンしてみてください。
+本稿では、GPGPUの一つであるCUDAを使用して、プログラムを高速化する様々な方法を述べます。コードは[GitHub](https://github.com/tail-island/cuda-primer)にあります。開発に使用した環境はArch Linuxです。
 
 # GPUは遅い……
 
@@ -528,7 +528,7 @@ Thrustの`std::vector`相当品は`thrust::device_vector`と`thrust::host_vector
 
 さて、先程のコードをよく見てみると、`divergence_count()`の中にもループがあります。せっかくなのでこのループもCUDA化しちゃう……のは残念だけど無理です。前の繰り返しの結果である`z`の値を次の繰り返しで使用しているから、並列化できないんです。こんな感じで、CUDAは使いどころが難しい……。でもせっかくThrustで楽にCUDAできるようになったのだから、もっといろいろCUDA化してみたい。
 
-というわけで、並列化が可能で、しかも並列化の効果が大きそうな場合が何かないかと考えてみたところ、[モンテカルロ法](https://ja.wikipedia.org/wiki/%E3%83%A2%E3%83%B3%E3%83%86%E3%82%AB%E3%83%AB%E3%83%AD%E6%B3%95)を思いつきました。ランダムな値で何度もシミュレーションを実行して推論するアレですね。そのために、まずは[素のC++でモンテカルロ法で円周率を計算するプログラム](https://github.com/tail-island/cuda-primer/tree/main/monte-carlo)を作ってみました。
+というわけで、並列化が可能で、しかも並列化の効果が大きそうな場合が何かないかと考えてみたところ、[モンテカルロ法](https://ja.wikipedia.org/wiki/%E3%83%A2%E3%83%B3%E3%83%86%E3%82%AB%E3%83%AB%E3%83%AD%E6%B3%95)を思いつきました。ランダムな値で何度もシミュレーションを実行した結果から推論するアレですね。そのために、まずは[素のC++でモンテカルロ法で円周率を計算するプログラム](https://github.com/tail-island/cuda-primer/tree/main/monte-carlo)を作ってみました。
 
 ~~~c++
 #include <iostream>
@@ -630,7 +630,7 @@ int main(int argc, char** argv) {
 
 メモリ管理はThrust任せで、乱数の生成はcuRAND任せです。cuRANDを使うにはGPUのメモリのアドレスが必要なのですけど、それは`thrust::vector`に対して`data().get()`すれば取得できます。今回のように一様乱数が必要なのであれば`curandGenerateUniform()`を、正規乱数が必要なのであれば`curandGenerateNormal()`を使用してください。あとは、必要に応じて乱数を生成するのではなくて、事前に大量に乱数を生成しておくようにプログラムの構造を変更するだけです。ほら、CUDAでモンテカルロ法をやるのはとても簡単でしょ？
 
-実行してみましょう。円周率は3.14163となったのでCPUとほぼ同じ結果（乱数のシード次第でもっと良い結果も悪い結果も出ます）、それなのに実行時間はたったの0.098083秒、CPU（0.608123秒）の6.2倍も高速です！　今回の処理だと高速化の割合があまり大きくないですけど、これは、シミュレーションの内容があまりに単純なため。普通にいろいろシミュレーションをする場合なら、モンテカルロ法のCUDA化効果は絶大です。cuRANDとThrustを使えば、プログラミングはとても簡単ですしね。ぜひ、CUDAでモンテカルロ法をやりまくってみてください。
+実行してみましょう。円周率は3.14163となったのでCPUとほぼ同じ結果（乱数のシード次第でもっと良い結果も悪い結果も出ます）、それなのに実行時間はたったの0.098083秒、CPU（0.608123秒）の6.2倍も高速です！　今回の処理だと高速化の割合があまり大きくないですけど、これは、シミュレーションの内容があまりに単純なためです。もっと普通のシミュレーションをする場合なら、モンテカルロ法のCUDA化効果は絶大ですよ。cuRANDとThrustを使えば、プログラミングはとても簡単ですしね。ぜひ、CUDAでモンテカルロ法をやりまくってみてください。
 
 # 行列演算は、そこそこ簡単にものすごく高速化できます
 
@@ -879,11 +879,11 @@ int main(int argc, char** argv) {
 }
 ~~~
 
-BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で、型がfloatならばsingleのSが接頭語についてSGEMMになります。cuBLASでは`cublasSgemm()`という関数がそれ。このcuBLASの関数を呼び出すには、cuBLASのハンドルが必要です。だから、上のコードではまずは`cublasCreate()`関数でハンドルを生成しています。で、すべてのcuBLASの呼び出しが完了したら、`cublasDestroy()`でハンドルを破棄します。これでハンドルの問題はなくなったので、あとは普通に行列を作成して……とやっては駄目。というのも、cuBLASの行列はFORTLANの行列との互換性から、列優先なんですよ。
+BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で、型がfloatならばsingleのSが接頭語についてSGEMMになります。cuBLASでは`cublasSgemm()`という関数がそれ。このcuBLASの関数を呼び出すには、cuBLASのハンドルが必要です。だから、上のコードではまずは`cublasCreate()`関数でハンドルを生成しています。で、すべてのcuBLASの呼び出しが完了したら、`cublasDestroy()`でハンドルを破棄します。これでハンドルの問題はなくなったので、あとは普通に行列を作成して……とやっては駄目。なぜかというと、cuBLASの行列はFORTLANの行列との互換性で列優先なんですよ。
 
 図
 
-今回は、楽をするために適当な`transpose()`関数を作成してごまかしましたが、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……
+今回は、楽をするために適当な`transpose()`関数を作成してごまかしましたけど、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……
 
 ~~~c++
 // 普通のC++で行列を作る。
@@ -896,7 +896,7 @@ for (auto y = 0; y < Y; ++y) {  // まずは行のループ
 }
 ~~~
 
-cuBLASを使うなら、列優先なので以下のようなコードになります。
+cuBLASを使う場合は、列優先なので以下のようなコードになります。
 
 ~~~c++
 // 列優先の行列を作る。
@@ -921,6 +921,8 @@ for (auto x = 0; x < X; ++x) {  // まずは列のループ
 
 というわけで、ほら、行列演算をそこそこ簡単にものすごく高速化できたでしょ？　行列演算が遅いという場合はぜひcuBLASを使ってしてみてください。
 
-他にも、複数のGPUに対応した[cuBLASXt](https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api)や疎行列向けの[cuSPARSE](https://docs.nvidia.com/cuda/cusparse/index.html)というライブラリもありますので、いろいろと検討してみてください。あと、CUDAライブラリではないですけど、[CuPy](https://www.preferred.jp/ja/projects/cupy/)もとても良い。Pythonのライブラリで、結構速くて、NumPy互換なのでとてもプログラミングがとにかく楽。[CuPyを使っで今回の行列演算をやってみた](https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy)ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいに簡単にプログラミングできました。
+---
+
+本稿で紹介した他にも、複数のGPUに対応した[cuBLASXt](https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api)や疎行列向けの[cuSPARSE](https://docs.nvidia.com/cuda/cusparse/index.html)というライブラリもありますので、ぜひ検討してみてください。あと、CUDAライブラリではないですけど、[CuPy](https://www.preferred.jp/ja/projects/cupy/)も最高です。Pythonのライブラリで、結構速くて、NumPy互換なのでプログラミングがとにかく楽です。[CuPyを使っで今回の行列演算をやってみた](https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy)ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいにプログラミングが簡単でした。
 
 いやぁ、CUDA（＋ライブラリ）は楽ちんにいろいろと高速化ができて、とにかく面白いですな。
