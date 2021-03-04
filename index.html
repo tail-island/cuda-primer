@@ -578,7 +578,7 @@
 <span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> c = <span class="dv">0</span>;  <span class="co">// 円の内側と判定された数。c / nは、円の面積のpi * r * rの1/4と等しくなるはす。</span></span>
 <span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">auto</span> i = <span class="dv">0</span>; i &lt; n; ++i) {  <span class="co">// n回繰り返して……</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (is_in_circle(distribution(rng), distribution(rng))) {  <span class="co">// 円の内側にあるなら……</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (is_in_circle(distribution(rng), distribution(rng))) {  <span class="co">// ランダムな点が円の内側にあるなら……</span></span>
 <span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>            c++;  <span class="co">// cをインクリメントします。</span></span>
 <span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        }</span>
 <span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    }</span>
