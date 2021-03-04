@@ -697,7 +697,7 @@
 <div class="sourceCode" id="cb13"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">auto</span> k = <span class="dv">0_z</span>; k &lt; size_k; ++k) {</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    matrix_c[i * size_n + j] += matrix_a[i * size_k + k] * matrix_b[k * size_n + j];</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<p>具体的に、'i'と'j'が0で、<code>k</code>が0の時と1の時を考えてみます。<code>matrix_a[0 * size_k + 0]</code>と<code>matrix_a[0 * size_k + 1]</code>はメモリ・アドレスが隣あっていますから、キャッシュ・メモリに載る確率が高い。でも、<code>matrix_b[0 * size_n + 0]</code>と<code>matrix_b[1 * size_n + 0]</code>は<code>size_n</code>分離れていて、だからキャッシュ・メモリに載らなくてメイン・メモリから読み込まなければならない可能性が高い。</p>
+<p>具体的に、<code>i</code>と<code>j</code>が0で、<code>k</code>が0の時と1の時を考えてみます。<code>matrix_a[0 * size_k + 0]</code>と<code>matrix_a[0 * size_k + 1]</code>はメモリ・アドレスが隣あっていますから、キャッシュ・メモリに載る確率が高い。でも、<code>matrix_b[0 * size_n + 0]</code>と<code>matrix_b[1 * size_n + 0]</code>は<code>size_n</code>分離れていて、だからキャッシュ・メモリに載らなくてメイン・メモリから読み込まなければならない可能性が高い。</p>
 <p><img src="./image/memory-cache.png" alt="キャッシュ" /></p>
 <p>で、キャッシュ・メモリとメイン・メモリでは読み書きに必要な時間が全然違う（下の図のようにキャッシュが速くてメイン・メモリが遅い）ので、だからこのコードはとてもメモリ・アクセスの効率が悪い駄目プログラムなんです。</p>
 <p><img src="./image/memory-latency.png" alt="メモリ・アクセスに必要な時間" /></p>
