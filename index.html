@@ -699,7 +699,7 @@
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>具体的に、'i'と'j'が0で、<code>k</code>が0の時と1の時を考えてみます。<code>matrix_a[0 * size_k + 0]</code>と<code>matrix_a[0 * size_k + 1]</code>はメモリ・アドレスが隣あっていますから、キャッシュ・メモリに載る確率が高い。でも、<code>matrix_b[0 * size_n + 0]</code>と<code>matrix_b[1 * size_n + 0]</code>は<code>size_n</code>分離れていて、だからキャッシュ・メモリに載らなくてメイン・メモリから読み込まなければならない可能性が高い。</p>
 <p><img src="./image/memory-cache.png" alt="キャッシュ" /></p>
-<p>で、キャッシュ・メモリとメイン・メモリでは読み書きに必要な時間が全然違う（下の図のようにキャッシュが速くてメイン・メモリが遅い）ので、このコードはとてもメモリ・アクセスの効率が悪い。</p>
+<p>で、キャッシュ・メモリとメイン・メモリでは読み書きに必要な時間が全然違う（下の図のようにキャッシュが速くてメイン・メモリが遅い）ので、だからこのコードはとてもメモリ・アクセスの効率が悪い駄目プログラムなんです。</p>
 <p><img src="./image/memory-latency.png" alt="メモリ・アクセスに必要な時間" /></p>
 <p>じゃあどうすれば良いのかというと今回は簡単で、ループの順序を入れ替えるだけでオッケーです。</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">auto</span> matmul_ng(<span class="at">const</span> <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_a, <span class="at">const</span> <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_b, <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_c, <span class="bu">std::</span>size_t size_m, <span class="bu">std::</span>size_t size_n, <span class="bu">std::</span>size_t size_k) <span class="kw">noexcept</span> {</span>
