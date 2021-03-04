@@ -28,6 +28,8 @@ inline float monte_carlo_pi(int n, unsigned long long seed) noexcept {
     auto ys = thrust::device_vector<float>(n);
     curand_check(curandGenerateUniform(rng, ys.data().get(), n));
 
+    curand_check(curandDestroyGenerator(rng));
+
     auto it = thrust::make_zip_iterator(thrust::make_tuple(std::begin(xs), std::begin(ys)));
     const auto c = thrust::count_if(it, it + n, [=] __device__ (const auto& p) {
         return is_in_circle(thrust::get<0>(p), thrust::get<1>(p));
