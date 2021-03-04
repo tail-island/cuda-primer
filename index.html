@@ -324,8 +324,8 @@
 <h1 id="gpuは速い">GPUは速い！</h1>
 <p>じゃあなんで余計な苦労してわざわざGPGPUするのかといえば、「GPUは速い」からなんです……と言われても、遅い証拠を見せられた後なのでなんだかわからないですよね。一体なんなのか、CPUをスポーツ・カーに、GPUをバスに例えて説明させてください。</p>
 <p>CPUはスポーツカーなので速度はスゴイのですけど、少人数しか乗れません。GPUはバスなので速度はそこそこなのですけど、大人数が乗れます。さて、大人数をA地点からB地点まで運ぶという目的の場合、どちらが早く終了するでしょうか？　そう、スポーツ・カーでピストン輸送するよりも、バスに大人数を載せて一回で運んだ方が実行に必要な時間は少ないというわけ。</p>
-<p>で、コンピューター処理で「大人数をA地点からB地点まで運ぶ」に相当するのは、同じ処理（A地点からB地点まで運ぶ）を何回も繰り返す（大人数）場合になります。ピストン輸送に相当するループ処理の内側を、ループ無しで並列で同時に実行する。これで所要時間が短くなるというわけ。先程のコードでは、GPUというバスに乗客を1人しか載せずにピストン輸送していたんですな。それではバスの良さがでなくて当然。</p>
-<p>というわけで、同時に何人も乗せる（処理を並列で実行する）ようにプログラムを修正しましょう。考えてみると、今回のコードでは<code>divergence_count()</code>は1,024×1,024で100万回とちょっと呼ばれます。で、<em>-2-2i</em>の場合の漸化式が発散するかと<em>2+2i</em>の場合の漸化式が発散するかは無関係ですから、並列での実行が可能。だったら、<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda">CUDAで並列で実行する形</a>にしちゃえばよい。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda/main.cu">こんな感じ</a>。</p>
+<p>で、コンピューター処理で「大人数をA地点からB地点まで運ぶ」に相当するのは、同じ処理（A地点からB地点まで運ぶ）を何回も繰り返す（大人数）場合になります。ピストン輸送に相当するループ処理の内側を、ループ無しで並列で同時に実行する。これで所要時間が短くなるというわけ。先程のコードでは、GPUというバスに乗客を1人しか載せずにピストン輸送していたんですな。それではバスの良さがでなくて当然でしょう。</p>
+<p>というわけで、同時に何人も乗せる（処理を並列で実行する）ようにプログラムを修正しましょう。考えてみると、今回のコードでは<code>divergence_count()</code>は1,024×1,024で100万回とちょっと呼ばれます。で、<em>-2-2i</em>の場合にマンデルブロ集合の漸化式が発散するかと<em>2+2i</em>の場合にマンデルブロ集合の漸化式が発散するかは無関係ですから、並列での実行が可能。だったら、<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda">CUDAで並列で実行する形</a>にしちゃえばよい。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda/main.cu">こんな感じ</a>。</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iterator&gt;</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;tuple&gt;</span></span>
