@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 $ make && ./mandelbrot | python plot.py
 ~~~
 
-![マンデルブロ集合](https://tail-island.github.io/cuda-primer/image/mandelbrot-set.png)
+<img src="https://tail-island.github.io/cuda-primer/image/mandelbrot-set.png" alt="マンデルブロ集合" width="512" height="512">
 
 はい。きれいにマンデルブロ集合が表示されましたのでプログラムはこれで正しそう。で、C++でマンデルブロ集合生成にかかった時間は、私の型落ちのPCで0.101171秒でした。
 
