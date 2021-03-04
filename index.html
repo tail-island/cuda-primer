@@ -441,7 +441,7 @@
 <p>あと、<code>i</code>や<code>j</code>の値は、<code>block</code>の値次第では要素数である<code>imag_size</code>や<code>real_size</code>を超える可能性があるので、範囲チェックも必要です（10の要素をブロックあたり3スレッドで処理する場合、最後のスレッドでは10個目と11個目と12個目を処理することになっちゃうでしょ？）。今回のコードでは<code>i</code>が<code>imag_size</code>以上になることはありませんけど、保守性を向上させるためにチェック処理を書きました。どの<code>__global__</code>関数も同じ書き方になっている方が、コードに間違いがないかをチェックときに簡単ですからね。</p>
 <p>あとは、<code>i</code>と<code>j</code>から、<code>linspace()</code>関数の一部をコピー＆ペーストして作成した処理を通じて<code>imag</code>と<code>real</code>に変換すれば、残りはこれまでと同じで完成。</p>
 <p>このプログラムを実行してみると、<code>mandelbrot_set()</code>にかかった時間は、たったの0.001492秒でした！　CPUでの処理時間が0.101171秒でしたから、わずか14.7%くらいの時間しかかかっていません！　67.8倍の高速化ですよ！　ほら、CUDAは早いでしょ？</p>
-<p>……でも、100万回が1回になったのだとしたら、いくらGPUの処理速度が遅いとはいっても、67.8倍の高速化ではちょっと納得できないかもしれません。そんなときは、nvprofコマンドで各関数の処理時間を計測してみましょう。</p>
+<p>……でも、私が使用しているGeForce GTX 1080 Tiのコア数は3,584基なので、最高にうまく行ったなら繰り返し回数は1/3,584回に減ることが期待できます。いくらGPUの処理速度が遅いとはいっても、67.8倍の高速化ではちょっと納得できないかもしれません。そんなときは、nvprofコマンドで各関数の処理時間を計測してみましょう。</p>
 <pre class="shell"><code>$ nvprof ./mandelbrot-cuda &gt; /dev/null
 ==32106== NVPROF is profiling process 32106, command: ./mandelbrot-cuda
 0.0015691
@@ -463,8 +463,8 @@
                     0.00%  3.7200us         1  3.7200us  3.7200us  3.7200us  cudaDeviceSynchronize
                     0.00%  2.4500us         2  1.2250us     510ns  1.9400us  cuDeviceGet
                     0.00%     830ns         1     830ns     830ns     830ns  cuDeviceGetUuid</code></pre>
-<p>nvprofの結果を見てみると、<code>mandelbrot_set()</code>にかかった時間は平均で68.380マイクロ秒でした。私が使用しているGeForce GTX 1080 Tiのコア数は3,584基なので、CPUでの実行時間の0.101171をコア数の3,584で割ると0.000028229で28.229マイクロ秒ですから、計測には他の処理が含まれていることとGPUの処理速度は遅いこととnvprofのオーバーヘッドを考えれば、まぁ、こんなものなのかな。</p>
-<p>それよりも気にしなければならないのは、GPUでの処理の86.21%がGPUとCPUの間のメモリ転送（[CUDA memcpyu DtoH]の部分）で使用されていることです。CPUとGPUのメモリは別で、だから<code>cudaMemcpy()</code>でメモリをコピーしてあげる必要があって、今回のプログラムではその処理にほとんどの時間が費やされているんですよ。CUDAプログラミングでは、できるだけCPUとGPUの間のメモリ転送を少なくすることが重要です。今回だと、たとえばGPUで画面表示までしちゃえばメモリのコピーは不要になって完全に解決できるのですけど、ごめんなさい、今回は勘弁してください……。</p>
+<p>nvprofの結果を見てみると、<code>mandelbrot_set()</code>にかかった時間は平均で68.380マイクロ秒でした。CPUでの実行時間の0.101171を3,584で割ると0.000028229で28.229マイクロ秒ですから、計測には他の処理が含まれていることとGPUの処理速度は遅いこととnvprofのオーバーヘッドを考えれば、まぁ、こんなものなのかな。</p>
+<p>それよりも気にしなければならないのは、GPUでの処理の86.21%がGPUとCPUの間のメモリ転送（[CUDA memcpyu DtoH]の部分）で使用されていることです。CPUとGPUのメモリは別で、だから<code>cudaMemcpy()</code>でメモリをコピーしてあげる必要があって、今回のプログラムではその処理にほとんどの時間が費やされているんですよ。CUDAプログラミングでは、できるだけCPUとGPUの間のメモリ転送を少なくすることが重要です。今回だと、たとえばGPUで画面表示までしちゃえばメモリのコピーは不要になって完全に解決できる気がしますけど、ごめんなさい、今回は勘弁してください……。</p>
 <h1 id="cudaは簡単">CUDAは簡単！</h1>
 <p>でもまぁCPUより圧倒的に高速なので良し！　……とはいえ、先程のようなコードを書くのはあまりにも面倒くさい。もしそう感じたなら、CUDAのライブラリの一つである<a href="https://docs.nvidia.com/cuda/thrust/index.html">Thrust</a>を使ってみてください。</p>
 <p>Thrustは、C++の標準ライブラリにあるSTL（Standard Template Library）のCUDA版です。コンテナもアルゴリズムもSTLに比べたら貧弱でちょっと面倒なところもありますけど、素のCUDAを書くよりは圧倒的に楽なので良し！　<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-thrust">Thrust版のマンデルブロ集合</a>は、<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-thrust/main.cu">こんな感じ</a>のコードになります。</p>
