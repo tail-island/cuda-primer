@@ -865,7 +865,7 @@
 <span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で、型がfloatならばsingleのSが接頭語についてSGEMMになります。cuBLASでは<code>cublasSgemm()</code>という関数がそれ。このcuBLASの関数を呼び出すには、cuBLASのハンドルが必要です。だから、上のコードではまずは<code>cublasCreate()</code>関数でハンドルを生成しています。で、すべてのcuBLASの呼び出しが完了したら、<code>cublasDestroy()</code>でハンドルを破棄します。これでハンドルの問題はなくなったので、あとは普通に行列を作成して……とやっては駄目。なぜかというと、cuBLASの行列はFORTLANの行列との互換性で列優先なんですよ。</p>
 <p><img src="./image/row-major-vs-column-major.png" alt="行優先と列優先" /></p>
-<p>今回は、楽をするために適当な<code>transpose()</code>関数を作成してごまかしましたけど、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……</p>
+<p>今回は楽をするために適当な<code>transpose()</code>関数を作成してごまかしましたけど、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 普通のC++で行列を作る。</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m = <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;(Y * X);</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
