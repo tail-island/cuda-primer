@@ -106,7 +106,7 @@
 <p>しょうがないので、アルゴリズムの改良……はまず最初にやるべきで、で、もしすでにアルゴリズムを改良した後なのであれば、GPGPU（General-Purpose computing on Graphics Processing Units）なんてどうでしょうか？</p>
 <p>本稿では、GPGPUの一つであるCUDAを使用して、プログラムを高速化する様々な方法を述べます。コードは<a href="https://github.com/tail-island/cuda-primer">GitHub</a>で、開発に使用した環境はArch Linuxです。</p>
 <h1 id="gpuは遅い">GPUは遅い……</h1>
-<p>まず最初に理解していただきたいこと、それは、GPUは遅いということです。足し算や掛け算を普通にやらせたら、実は、GPUの速度はCPUの足元にも及びません。</p>
+<p>まず最初に理解していただきたいこと、それは、GPUは遅いということです。足し算や掛け算を普通にやらせたら、GPUの速度はCPUの足元にも及ばないんです。</p>
 <p>試してみましょう。題材は私のようなおっさんプログラマが泣いて喜ぶ<a href="https://ja.wikipedia.org/wiki/%E3%83%9E%E3%83%B3%E3%83%87%E3%83%AB%E3%83%96%E3%83%AD%E9%9B%86%E5%90%88">マンデルブロ集合</a>です。まずは、<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot">素のC++17</a>で作ってみました。</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
