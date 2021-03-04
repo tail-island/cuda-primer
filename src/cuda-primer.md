@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 $ make && ./mandelbrot | python plot.py
 ~~~
 
-<img src="https://tail-island.github.io/cuda-primer/image/mandelbrot-set.png" alt="マンデルブロ集合" width="512" height="512">
+![マンデルブロ集合](./image/mandelbrot-set.png)
 
 はい。きれいにマンデルブロ集合が表示されましたのでプログラムはこれで正しそう。で、C++でマンデルブロ集合生成にかかった時間は、私の型落ちのPCで0.101171秒でした。
 
@@ -919,6 +919,8 @@ for (auto x = 0; x < X; ++x) {  // まずは列のループ
 
 というわけで、関数名が分かりづらかったり行列が列優先だったりでちょっと面倒くさそうなcuBLASでしたけど、その効果は絶大です。なんと、cuBLASを使用したこのコード、0.0005763秒で処理が完了するんです！　普通に書いたCUDA版（0.0153324秒）の3.8%の処理時間なので26.6倍です。C++改良版（0.0946229秒）と比較すれば、0.6%の処理時間なので速度は164.2倍です！　cuBLAS速すぎ。cuBLASを使わずに行列演算を自作するのは、人生の無駄づかいですよ。
 
-というわけで、ほら、行列演算をそこそこ簡単にものすごく高速化できたでしょ？　行列演算が遅いという場合はぜひcuBLASを使ってしてみてください。他にも、複数のGPUに対応した[cuBLASXt](https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api)や疎行列向けの[cuSPARSE](https://docs.nvidia.com/cuda/cusparse/index.html)というライブラリもありますので、いろいろと検討してみてください。あと、CUDAライブラリではないですけど、[CuPy](https://www.preferred.jp/ja/projects/cupy/)もとても良い。Pythonのライブラリで、結構速くて、NumPy互換なのでとてもプログラミングがとにかく楽。[CuPyを使っで今回の行列演算をやってみた](https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy)ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいに簡単にプログラミングできました。
+というわけで、ほら、行列演算をそこそこ簡単にものすごく高速化できたでしょ？　行列演算が遅いという場合はぜひcuBLASを使ってしてみてください。
 
-いやぁ、CUDA＋ライブラリ、楽ちんにいろいろと高速化ができて、とにかく面白いですな。
+他にも、複数のGPUに対応した[cuBLASXt](https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api)や疎行列向けの[cuSPARSE](https://docs.nvidia.com/cuda/cusparse/index.html)というライブラリもありますので、いろいろと検討してみてください。あと、CUDAライブラリではないですけど、[CuPy](https://www.preferred.jp/ja/projects/cupy/)もとても良い。Pythonのライブラリで、結構速くて、NumPy互換なのでとてもプログラミングがとにかく楽。[CuPyを使っで今回の行列演算をやってみた](https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy)ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいに簡単にプログラミングできました。
+
+いやぁ、CUDA（＋ライブラリ）は楽ちんにいろいろと高速化ができて、とにかく面白いですな。

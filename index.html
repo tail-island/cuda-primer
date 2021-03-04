@@ -77,13 +77,28 @@
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <link rel="stylesheet" href="https://tail-island.github.io/cuda-primer/css/github-markdown.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css" />
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
   <meta name="title"       content="CUDAプログラミング・ガイド">
   <meta name="description" content="CUDAプログラミングの、多分これが最も簡単じゃないかなーと思う作り方のガイド。">
   <meta name="keywords"    content="CUDA, C++">
+  <style>
+  	.markdown-body {
+  		box-sizing: border-box;
+  		min-width: 200px;
+  		max-width: 980px;
+  		margin: 0 auto;
+  		padding: 45px;
+  	}
+
+  	@media (max-width: 767px) {
+  		.markdown-body {
+  			padding: 15px;
+  		}
+  	}
+  </style>
 </head>
 <body>
 <article class="markdown-body">
@@ -93,7 +108,7 @@
 <h1 id="gpuは遅い">GPUは遅い……</h1>
 <p>まず最初に理解していただきたいこと、それは、GPUは遅いということです。足し算や掛け算を普通にやらせたら、実は、GPUの速度はCPUの足元にも及びません。</p>
 <p>試してみましょう。題材は私のようなおっさんプログラマが泣いて喜ぶ<a href="https://ja.wikipedia.org/wiki/%E3%83%9E%E3%83%B3%E3%83%87%E3%83%AB%E3%83%96%E3%83%AD%E9%9B%86%E5%90%88">マンデルブロ集合</a>です。まずは、<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot">素のC++17</a>で作ってみました。</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iterator&gt;</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;tuple&gt;</span></span>
@@ -167,10 +182,10 @@
 <span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>動かしてみましょう。出力を画像にして表示する処理はPythonで作成しました。</p>
 <pre class="shell"><code>$ make &amp;&amp; ./mandelbrot | python plot.py</code></pre>
-<p><img src="https://tail-island.github.io/cuda-primer/image/mandelbrot-set.png" alt="マンデルブロ集合" width="512" height="512"></p>
+<p><img src="./image/mandelbrot-set.png" alt="マンデルブロ集合" /></p>
 <p>はい。きれいにマンデルブロ集合が表示されましたのでプログラムはこれで正しそう。で、C++でマンデルブロ集合生成にかかった時間は、私の型落ちのPCで0.101171秒でした。</p>
 <p>上のプログラムの<code>mandelbrot_set()</code>関数（2つある内の上の方）を<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda-ng">CUDAでGPU上で実行</a>させてみます。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda-ng/main.cu">こんな感じ</a>。</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iterator&gt;</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;tuple&gt;</span></span>
@@ -277,7 +292,7 @@
 <p><img src="" alt="GPUのメモリとCPUのメモリは異なる" /></p>
 <p>だから、<code>std::vector</code>でCPUのメモリに場所を確保したのとは別に<code>cudaMalloc()</code>でGPUのメモリを確保して、で、GPUのメモリ上に生成されたマンデルブロ集合の情報を<code>cudaMemcpy()</code>でCPUのメモリに転送してあげなければなりません。また、確保したメモリは開放しなければならないので、<code>cudaFree()</code>を呼ぶのも忘れてはなりません（実は後述するThrustを使うと少し楽ができるのですけど）。あ、関数の引数は、普通に渡しても大丈夫です。そうじゃないと、そもそもGPUのメモリ・アドレスを渡せないですしね。</p>
 <p>あと、CUDAの関数は例外を使用していないので、戻り値を使ってエラー・チェックしなければなりません。あぁ面倒くせぇけど、これはエラー・チェック用の関数を作成すれば少し楽になります。今回は<code>cuda_check()</code>という関数を作成しました。</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdlib&gt;</span></span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdlib&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cuda.h&gt;</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -311,7 +326,7 @@
 <p>CPUはスポーツカーなので速度はスゴイのですけど、少人数しか乗れません。GPUはバスなので速度はそこそこなのですけど、大人数が乗れます。さて、大人数をA地点からB地点まで運ぶという目的の場合、どちらが早く終了するでしょうか？　そう、スポーツ・カーでピストン輸送するよりも、バスに大人数を載せて一回で運んだ方が実行に必要な時間は少ないというわけ。</p>
 <p>で、コンピューター処理で「大人数をA地点からB地点まで運ぶ」に相当するのは、同じ処理（A地点からB地点まで運ぶ）を何回も繰り返す（大人数）場合になります。ピストン輸送に相当するループ処理の内側を、ループ無しで並列で同時に実行する。これで所要時間が短くなるというわけ。先程のコードでは、GPUというバスに乗客を1人しか載せずにピストン輸送していたんですな。それではバスの良さがでなくて当然。</p>
 <p>というわけで、同時に何人も乗せる（処理を並列で実行する）ようにプログラムを修正しましょう。考えてみると、今回のコードでは<code>divergence_count()</code>は1,024×1,024で100万回とちょっと呼ばれます。で、<em>-2-2i</em>の場合の漸化式が発散するかと<em>2+2i</em>の場合の漸化式が発散するかは無関係ですから、並列での実行が可能。だったら、<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda">CUDAで並列で実行する形</a>にしちゃえばよい。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda/main.cu">こんな感じ</a>。</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iterator&gt;</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;tuple&gt;</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
@@ -416,11 +431,11 @@
 <p>図</p>
 <p>少し分かりづらいのですけど、<code>grid</code>ではグリッドの中に生成するブロックの数を、<code>block</code>ではブロックの中に生成するスレッドの数を指定します。この<code>grid</code>や<code>block</code>の型である<code>dim3</code>は、<code>x</code>と<code>y</code>と<code>z</code>の3つの値で、生成するブロックやスレッドの数を指定するためのクラスです。この<code>dim3</code>の<code>x</code>と<code>y</code>と<code>z</code>は全て使用しなければならないわけではなくて、たとえば今回のように2つしか指定しない場合は<code>x</code>と<code>y</code>だけが設定されます。今回のコードでは、複素数の実数部のインデックスを<code>x</code>、虚数部のインデックスを<code>y</code>にしました。なお、以前のコードで使用した<code>&lt;&lt;&lt;1, 1&gt;&gt;&gt;</code>は<code>&lt;&lt;&lt;dim3(1), dim3(1)&gt;&gt;&gt;</code>と同じ意味で、これだとグリッドの中にブロックを1つだけ、そしてそのブロックの中にスレッドを1つだけ生成するので、並列実行なしのピストン輸送になって遅かったというわけ。</p>
 <p>で、ここまでを読んで、どうせ<code>grid</code>と<code>block</code>という2つの値を使うのなら、<code>grid</code>に<code>imag_size</code>を設定して<code>block</code>に<code>real_size</code>を設定しちゃえばもっと簡単じゃん……と考えたかもしれませんけど、その方式は不可能だったりパフォーマンス面で不利になったりするので使用できません。というのも、ブロック中に作成できるスレッドの数には最大値の制限があって（私が使用しているGeForce GTX 1080 Tiでは1,024スレッドまで）、あと、ブロック中のスレッドの数が32の場合に効率が良かったりするんです。だから、<code>block</code>の方は、<code>x</code>×<code>y</code>×<code>z</code>が32の倍数、かつ、制限値よりも小さな値にしなければなりません。というわけで、今回はブロック中に生成するスレッドの数である<code>block</code>は、<code>dim(256, 1)</code>にしました。1つのブロックでは、画像の縦1ラインの横256ドットを処理するスレッドを生成するわけですね。で、この場合の<code>grid</code>の値は、このプログラムでの<code>x</code>の要素数である<code>real_size</code>を256で割った結果……だと1つ足りなくなってしまうかもしれない（たとえば10個の要素を3ずつ処理する場合だと、<code>10 / 3</code>では3ブロック×3スレッドで9個のスレッドしか生成されない）ので、一般に以下のようなコードになります。</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> grid  = dim3((real_size + <span class="dv">256</span> - <span class="dv">1</span>) / <span class="dv">256</span>, imag_size);</span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> grid  = dim3((real_size + <span class="dv">256</span> - <span class="dv">1</span>) / <span class="dv">256</span>, imag_size);</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> block = dim3(<span class="dv">256</span>, <span class="dv">1</span>);</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>mandelbrot_set&lt;&lt;&lt;grid, block&gt;&gt;&gt;(real_min, real_max, real_size, imag_min, imag_max, imag_size, result_device);</span></code></pre></div>
 <p>さて、生成されるスレッドの方は、自分がどの要素を処理すればよいのかのかが分からないと処理を開始できません。CUDAではない普通のスレッド・プログラミングなら引数で情報を渡すのですけど、CUDAではスレッドは同期で実行される（複数のスレッドが同じ命令を同じタイミングで実行します。たとえば、if文で条件分岐するような場合は、実行する命令を場合分けできないので、条件が偽となったスレッドは、他のスレッドが真となった場合の処理を終えるまで何もしないで待つという面白い挙動になります）ため、一気にスレッドを起動しなければならず、だからスレッド一つ一つに引数としてパラメーターを渡すことはできません。ではどうするのかというと、スレッド毎に一意になるIDを割り振ることで対応し、ブロックのIDは<code>blockId</code>、スレッドのIDは<code>threadId</code>という暗黙の変数を通じて取得できるようになっています。これに加えて<code>blockDim</code>という、ブロックあたり何個のスレッドが生成されたのかを表現する変数も使用できます。というわけで、スレッドの処理対象は、以下のコードで取得できます。</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> i = blockIdx.y * blockDim.y + threadIdx.y;</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> i = blockIdx.y * blockDim.y + threadIdx.y;</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> j = blockIdx.x * blockDim.x + threadIdx.x;</span></code></pre></div>
 <p>今回は、<code>i</code>が複素数の虚数部のインデックス、<code>j</code>が実数部のインデックスになるわけですね。なお、今回のコードだと<code>blockDim.y</code>と<code>threadIdx.y</code>の値はどちらも1になるので少し無駄な計算をしているのですけど、こんな小さな無駄を気にするより、呼び出し側の<code>grid</code>や<code>block</code>を変更しても正常動作する保守性の高さの方が重要でしょうからこのままで。</p>
 <p>あと、<code>i</code>や<code>j</code>の値は、<code>block</code>の値次第では要素数である<code>imag_size</code>や<code>real_size</code>を超える可能性があるので、範囲チェックも必要です（10の要素をブロックあたり3スレッドで処理する場合、最後のスレッドでは10個目と11個目と12個目を処理することになっちゃうでしょ？）。今回のコードでは<code>i</code>が<code>imag_size</code>以上になることはありませんけど、保守性を向上させるためにチェック処理を書きました。どの<code>__global__</code>関数も同じ書き方になっている方が、コードに間違いがないかをチェックときに簡単ですからね。</p>
@@ -453,7 +468,7 @@
 <h1 id="cudaは簡単">CUDAは簡単！</h1>
 <p>でもまぁCPUより圧倒的に高速なので良し！　……とはいえ、先程のようなコードを書くのはあまりにも面倒くさい。もしそう感じたなら、CUDAのライブラリの一つである<a href="https://docs.nvidia.com/cuda/thrust/index.html">Thrust</a>を使ってみてください。</p>
 <p>Thrustは、C++の標準ライブラリにあるSTL（Standard Template Library）のCUDA版です。コンテナもアルゴリズムもSTLに比べたら貧弱でちょっと面倒なところもありますけど、素のCUDAを書くよりは圧倒的に楽なので良し！　<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-thrust">Thrust版のマンデルブロ集合</a>は、<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-thrust/main.cu">こんな感じ</a>のコードになります。</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iterator&gt;</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;tuple&gt;</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
@@ -539,13 +554,13 @@
 <span id="cb9-84"><a href="#cb9-84" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
 <span id="cb9-85"><a href="#cb9-85" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Thrustの<code>std::vector</code>相当品は<code>thrust::device_vector</code>と<code>thrust::host_vector</code>の2種類にわかれていて、それぞれはGPUのメモリとCPUのメモリを使用します。そして<code>thrust::device_vector</code>を<code>thrust::host_vector</code>にコピーするだけでGPUのメモリからCPUのメモリへのコピーが実行されるという便利な仕様になっています。もちろんメモリの開放も全自動。というわけで、これで面倒くさかった<code>cudaMalloc()</code>と<code>cudaMemcpy()</code>と<code>cudaFree()</code>を書かなくて済むようになりました。あ、使用上の注意点が一つあって、ドキュメントには<code>thrust::device_vector</code>の要素にCPUのコードからアクセスする機能（<code>result_device[0]</code>で、CPUのコードからでも0番めの要素を取得できる）が載っているんですけど、この機能を使うと小さな単位での<code>cudaMemcpy()</code>が走ってプログラムがとても遅くなってしまいます。上のコードのように要素全部をコピーする方式を使用してください。</p>
-<p>あと、Thrustには<a href="https://docs.nvidia.com/cuda/thrust/index.html#fancy-iterators">Fancy Iterator</a>と呼ばれるイテレーター群があって、処理を集合から開始しなくてもよくなっています。今回のコードで使用した<code>thrust::counting_iterator</code>は、0、1、2……と順番に数を数えていくイテレーターで、これを使えばCUDAのスレッドに一意のIDを渡せます。今回のコードでは、終端を<code>it + real_size * imag_size</code>にして、生成される画像のすべてのドットに対応させました。</p>
+<p>あと、Thrustには<a href="https://docs.nvidia.com/cuda/thrust/index.html#fancy-iterators">Fancy Iterator</a>と呼ばれるイテレーター群があって、処理を集合から開始しなくてもよくなっています。今回のコードで使用した`thrust::counting_iterator`は、0、1、2……と順番に数を数えていくイテレーターで、これを使えばCUDAのスレッドに一意のIDを渡せます。今回のコードでは、終端を<code>it + real_size * imag_size</code>にして、生成される画像のすべてのドットに対応させました。</p>
 <p>で、イテレーターに対して処理を実行するのは、<code>thrust::transform()</code>でオッケー。この<code>thrust::transform()</code>は<code>__device__</code>なラムダ式を引数にできます（参照でキャプチャする<code>[&amp;]</code>を使えない、ラムダ式を含む関数の戻り値には<code>auto</code>を使えないなどの制限はありますけど）。このラムダ式がGPU上で並列に実行されるので、<code>__global__</code>とか<code>grid</code>とか<code>block</code>とかを使わなくても済むようになりました。</p>
 <p>と、これでCUDAの面倒だったところが解消されました。Thrustの効果は上のコードを見れば明らかでしょう。CUDAなのに、普通の簡潔なコードになっています！　しかもこのコードはとても高速なんですよ。実行してみたら、0.000877秒で完了しちゃいました！　CPU（0.101171秒）の115.4倍、素のCUDA（0.001492秒）の1.7倍も高速です。nvprofで見てもGPU内の処理時間は変わっていないのでどんなすごいテクニックを使っているのかは私ではよくわからない（APIの呼び出し方が工夫されまくっているんだと思う）のですけど、高速すぎて困ることはないので良し！</p>
 <h1 id="モンテカルロ法を高速化してみるのはどうでしょうか">モンテカルロ法を高速化してみるのは、どうでしょうか？</h1>
 <p>さて、先程のコードをよく見てみると、<code>divergence_count()</code>の中にもループがあります。せっかくなのでこのループもCUDA化しちゃう……のは残念だけど無理です。前の繰り返しの結果である<code>z</code>の値を次の繰り返しで使用しているから、並列化できないんです。こんな感じで、CUDAは使いどころが難しい……。でもせっかくThrustで楽にCUDAできるようになったのだから、もっといろいろCUDA化してみたい。</p>
 <p>というわけで、並列化が可能で、しかも並列化の効果が大きそうな場合が何かないかと考えてみたところ、<a href="https://ja.wikipedia.org/wiki/%E3%83%A2%E3%83%B3%E3%83%86%E3%82%AB%E3%83%AB%E3%83%AD%E6%B3%95">モンテカルロ法</a>を思いつきました。ランダムな値で何度もシミュレーションを実行して推論するアレですね。そのために、まずは<a href="https://github.com/tail-island/cuda-primer/tree/main/monte-carlo">素のC++でモンテカルロ法で円周率を計算するプログラム</a>を作ってみました。</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;../util/util.hpp&quot;</span></span>
@@ -583,7 +598,7 @@
 <span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>実行してみると、円周率は3.14162、実行時間は0.608123秒でした。では、早速これをCUDA化してみましょう……と思ったのですけど、さて、乱数はどうしましょうか？　乱数の生成は重たい処理なので、できればGPUでやりたい。でも、標準ライブラリを使わずに乱数を生成するプログラムを作るのはあまりに大変そう。というか、そもそも乱数生成って並列化できるのでしょうか？</p>
 <p>という問題は、CUDAのライブラリの一つである<a href="https://docs.nvidia.com/cuda/curand/index.html">cuRAND</a>を使えばまるっと解決できます。さっそく、<a href="https://github.com/tail-island/cuda-primer/tree/main/monte-carlo-thrust">cuRANDを使ってモンテカルロ法をCUDA化</a>してみましょう。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/monte-carlo-thrust/main.cu">こんな感じ</a>になります。</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cuda.h&gt;</span></span>
@@ -640,7 +655,7 @@
 <h1 id="行列演算はそこそこ簡単にものすごく高速化できます">行列演算は、そこそこ簡単にものすごく高速化できます</h1>
 <p>さて、世の中には頭が良い人がいっぱいいて、彼ら彼女らはいろんな物事を数式で表現します（私は頭が良くないので、数式から逃げて生きているけど）。しかも、奴らの数式は、行列を使いまくるんです（私は、vector（ベクター）がドイツ語のvektor（ベクトル）の英語読みだと最近気がついたレベルだけど）。でも、行列の演算で表現することは、物事を単純化してくれる上に、高速化の可能性をもたらしてくれる素晴らしい方式なんですよ。頭が良い人が式を分かりやすく書き下してくれれば、私のような文系のおっさんでもプログラミング可能だしね。</p>
 <p>というわけで好き嫌いはともかくとして行列プログラミングはやっぱり必要なので、「行列 積」で検索して見つかったページを参考にして作ったのが以下のコードです。<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation">M行K列の行列とK行N列の掛け算</a>ですね。手で計算する場合の処理を、そのままプログラミングしました。</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb12"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;../util/util.hpp&quot;</span></span>
@@ -679,13 +694,13 @@
 <span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
 <span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>で、実は、このコードは良くないコードなんですよ。というのも、これだとメモリへのアクセス効率がとても悪いんです。<code>matmul()</code>の一番内側の、<code>k</code>のループのところを見てください。</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">auto</span> k = <span class="dv">0_z</span>; k &lt; size_k; ++k) {</span>
+<div class="sourceCode" id="cb13"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">auto</span> k = <span class="dv">0_z</span>; k &lt; size_k; ++k) {</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    matrix_c[i * size_n + j] += matrix_a[i * size_k + k] * matrix_b[k * size_n + j];</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>具体的に、'i'と'j'が0で、<code>k</code>が0の時と1の時を考えてみます。<code>matrix_a[0 * size_k + 0]</code>と<code>matrix_a[0 * size_k + 1]</code>はメモリ・アドレスが隣あっていますから、キャッシュ・メモリに載る確率が高い。でも、<code>matrix_b[0 * size_n + 0]</code>と<code>matrix_b[1 * size_n + 0]</code>は<code>size_n</code>分離れていて、だからキャッシュ・メモリに載らなくてメイン・メモリから読み込まなければならない可能性が高い。で、キャッシュ・メモリとメイン・メモリでは読み書きに必要な時間が全然違うので、このコードはとてもメモリ・アクセスの効率が悪い。</p>
 <p>図</p>
 <p>じゃあどうすれば良いのかというと今回は簡単で、ループの順序を入れ替えるだけでオッケーです。</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">auto</span> matmul_ng(<span class="at">const</span> <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_a, <span class="at">const</span> <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_b, <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_c, <span class="bu">std::</span>size_t size_m, <span class="bu">std::</span>size_t size_n, <span class="bu">std::</span>size_t size_k) <span class="kw">noexcept</span> {</span>
+<div class="sourceCode" id="cb14"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">auto</span> matmul_ng(<span class="at">const</span> <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_a, <span class="at">const</span> <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_b, <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;&amp; matrix_c, <span class="bu">std::</span>size_t size_m, <span class="bu">std::</span>size_t size_n, <span class="bu">std::</span>size_t size_k) <span class="kw">noexcept</span> {</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">auto</span> i = <span class="dv">0_z</span>; i &lt; size_m; ++i) {</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (<span class="kw">auto</span> k = <span class="dv">0_z</span>; k &lt; size_k; ++k) {  <span class="co">// この行と……</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> (<span class="kw">auto</span> j = <span class="dv">0_z</span>; j &lt; size_n; ++j) {  <span class="co">// この行を入れ替えた。</span></span>
@@ -696,7 +711,7 @@
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>時間を計測してみます。最初のコードの場合の実行時間は0.239278秒で、改良したコードの実行感は0.0946229秒。39.5%の処理時間で完了しているので、たったこれだけの修正で2.5倍に高速化されました！　今どきのプログラミングでは、メモリ・アクセスの効率化がとても重要なんですな。</p>
 <p>でも、上のコードと同じことをCUDAでもやるのは実は難しいんですよ。まずは、<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cuda">効率が良くないバージョンをCUDA化</a>してみます。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/matrix-operation-cuda/main.cu">こんな感じ</a>。</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb15"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cuda.h&gt;</span></span>
@@ -756,7 +771,7 @@
 <span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
 <span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Thrustを使うとメモリ管理のコードが不要になって楽ちんですな。このコードの実行時間は0.0153324秒で、C++改良版（0.0946229秒）の16.2%の処理時間、6.2倍の高速化でまぁそこそこな感じ。では、試しにC++改良版と同じやり方でコードを修正してみましょう。</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>__global__</span>
+<div class="sourceCode" id="cb16"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>__global__</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> matmul(<span class="at">const</span> <span class="dt">float</span>* matrix_a, <span class="at">const</span> <span class="dt">float</span>* matrix_b, <span class="dt">float</span>* matrix_c, <span class="bu">std::</span>size_t size_m, <span class="bu">std::</span>size_t size_n, <span class="bu">std::</span>size_t size_k) {</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="kw">auto</span> i = blockIdx.y * blockDim.y + threadIdx.y;</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="kw">auto</span> k = blockIdx.x * blockDim.x + threadIdx.x;  <span class="co">// jからkに変更しました。</span></span>
@@ -770,14 +785,14 @@
 <span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>呼び出し側はこんな感じ。</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>matmul&lt;&lt;&lt;dim3((M + <span class="dv">16</span> - <span class="dv">1</span>) / <span class="dv">16</span>, (K + <span class="dv">16</span> - <span class="dv">1</span>) / <span class="dv">16</span>), dim3(<span class="dv">16</span>, <span class="dv">16</span>)&gt;&gt;&gt;(a_device.data().get(), b_device.data().get(), c_device.data().get(), M, N, K);  <span class="co">// JではなくKで並列化するように変更しました。</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>matmul&lt;&lt;&lt;dim3((M + <span class="dv">16</span> - <span class="dv">1</span>) / <span class="dv">16</span>, (K + <span class="dv">16</span> - <span class="dv">1</span>) / <span class="dv">16</span>), dim3(<span class="dv">16</span>, <span class="dv">16</span>)&gt;&gt;&gt;(a_device.data().get(), b_device.data().get(), c_device.data().get(), M, N, K);  <span class="co">// JではなくKで並列化するように変更しました。</span></span></code></pre></div>
 <p>やったことは簡単で、<code>j</code>と<code>k</code>、<code>N</code>と<code>K</code>を入れ替えただけ。で、このコードを動かしてみると、前より遅くなっちゃう上に、そもそも掛け算の結果が間違えているという致命的なバグが発生しちゃうんですよ……。</p>
 <p>遅くなってしまった理由は、メモリ・アクセスの効率が悪くなってしまったから。CUDAではスレッドは32個単位でまとめられて、この32個のスレッドの単位でメモリにアクセスします。最初のバージョンでは隣合うスレッドで異なるのは<code>j</code>の値で、だから、スレッド1とスレッド2が参照するメモリは隣り合っています。CUDAのメモリアクセスは32ワード単位だから、これなら1回か2回のメモリアクセスで32個のスレッドが必要とするデータを取得できます。ところが修正後の遅いコードだと、<code>k</code>の値が隣り合うスレッドで異なるわけですから<code>matrix_b[k * size_n + j]</code>は遠く離れた場所になってしまいます。だから32個のスレッドそれぞれ向けに32回のメモリへのアクセスが必要になって、メモリ・アクセスの効率が悪くなってしまったというわけ。</p>
 <p>計算結果が間違えているというバグが発生するのは、マルチ・スレッドだから。<code>matrix_c[i * size_n + j]</code>は、スレッドが異なっても同じメモリを指していますよね？　だからスレッド間でメモリ・アクセスの競合が発生して、計算結果の多くが捨てられてしまったというわけ。</p>
 <p>ではどうすれば良いのかというと、行列の積の場合はブロック化した上でCUDAのシェアード・メモリという機能を使うのが一般的です。シェアード・メモリは、前述した32個単位のスレッドで共有できるとても高速なメモリです。ただし、シェアード・メモリにアクセスするときにはスレッドを同期させるための<code>__syncthreads()</code>を呼び出したりしないと不正な処理結果になる可能性がある点に注意してください。あと、シェアード・メモリはとても高速な代わりに、バンクと呼ばれる単位で管理されていて、あるバンクに同時にアクセスできるのは一つのスレッドだけという制限があるので、アクセスがぶつからないようなやり方を考えてあげる必要もあります。あと、シャッフル・オペレーションという別のスレッドのローカル変数にアクセスする機能を使うとさらに速くなるかもしれないので、検討してみてください。あと……。あと……。と、こんな感じにCUDAではメモリ・アクセスを効率化する方法がいっぱいあって、それらをうまく使えばかなり高速化できるのですけど、行列の積を求めようとしただけでこんないろいろな知識を要求されるなんて、やってられないですよね？</p>
 <p>だから、ライブラリを使いましょう。CUDAのライブラリには行列やベクトルの計算に特化したcuBLASというライブラリがあります。<a href="https://ja.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms">BLAS（Basic Linear Algebra Subprograms）</a>というのは、ベクトルと行列に関する基本線型代数操作を実行するライブラリAPIのデファクト・スタンダードです。BLASはAPIなのでその実装はたくさんあって、最初は古き良きFORTLAN向けだったのですけど、最近はC++からも使えるのが多いみたいです。このBLASのCUDA版が、cuBLASなんですな。</p>
 <p>というわけで、<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cublas">cuBLASで行列の積を求めるプログラム</a>を作ってみました。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/matrix-operation-cublas/main.cu">こんな感じ</a>。</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<div class="sourceCode" id="cb18"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cublas_v2.h&gt;</span></span>
@@ -849,7 +864,7 @@
 <p>BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で、型がfloatならばsingleのSが接頭語についてSGEMMになります。cuBLASでは<code>cublasSgemm()</code>という関数がそれ。このcuBLASの関数を呼び出すには、cuBLASのハンドルが必要です。だから、上のコードではまずは<code>cublasCreate()</code>関数でハンドルを生成しています。で、すべてのcuBLASの呼び出しが完了したら、<code>cublasDestroy()</code>でハンドルを破棄します。これでハンドルの問題はなくなったので、あとは普通に行列を作成して……とやっては駄目。というのも、cuBLASの行列はFORTLANの行列との互換性から、列優先なんですよ。</p>
 <p>図</p>
 <p>今回は、楽をするために適当な<code>transpose()</code>関数を作成してごまかしましたが、cuBLASを本気で使うなら最初から列優先な形ですべてのデータを作っておくべきでしょう。普通のC++なら以下のようなコードになるわけですけど……</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 普通のC++で行列を作る。</span></span>
+<div class="sourceCode" id="cb19"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 普通のC++で行列を作る。</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m = <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;(Y * X);</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">auto</span> y = <span class="dv">0</span>; y &lt; Y; ++y) {  <span class="co">// まずは行のループ</span></span>
@@ -858,7 +873,7 @@
 <span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>cuBLASを使うなら、列優先なので以下のようなコードになります。</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 列優先の行列を作る。</span></span>
+<div class="sourceCode" id="cb20"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 列優先の行列を作る。</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m = <span class="bu">std::</span>vector&lt;<span class="dt">float</span>&gt;(X * Y);</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">auto</span> x = <span class="dv">0</span>; x &lt; X; ++x) {  <span class="co">// まずは列のループ</span></span>
@@ -871,8 +886,9 @@
 <p>あと、cuBLASの引数は無駄にアドレス渡しになっているものが多いです。GEMMはalpha * A * B + beta * Cの結果をCに代入するというものなのですけど、このalphaやbetaをアドレス渡しにするために、上のコードではわざわざ変数を定義しています。で、今回のコードでは<code>beta = 0.0f</code>にしたので、C（<code>c_device</code>）の値はなんでもよい。だから上のコードでは<code>c_device</code>は初期化時に要素の値を指定していないというわけですね。</p>
 <p>これで準備はすべて整いましたので、<code>cublasSgemm()</code>を呼び出します。最初の引数はハンドル、<code>CUBLAS_OP_N</code>は<code>a_device.data().get()</code>や<code>b_device.data().get()</code>に何も手を加えずにそのまま掛け算するという意味、2回目の<code>M</code>と<code>K</code>と<code>M</code>は、<code>cublasSetMatrix()</code>の時と同じで大きな行列の一部を使えるようにするという理由で存在しているので、行列全体を使用する今回はそのまま<code>M</code>と<code>K</code>と<code>N</code>を使います。</p>
 <p>というわけで、関数名が分かりづらかったり行列が列優先だったりでちょっと面倒くさそうなcuBLASでしたけど、その効果は絶大です。なんと、cuBLASを使用したこのコード、0.0005763秒で処理が完了するんです！　普通に書いたCUDA版（0.0153324秒）の3.8%の処理時間なので26.6倍です。C++改良版（0.0946229秒）と比較すれば、0.6%の処理時間なので速度は164.2倍です！　cuBLAS速すぎ。cuBLASを使わずに行列演算を自作するのは、人生の無駄づかいですよ。</p>
-<p>というわけで、ほら、行列演算をそこそこ簡単にものすごく高速化できたでしょ？　行列演算が遅いという場合はぜひcuBLASを使ってしてみてください。他にも、複数のGPUに対応した<a href="https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api">cuBLASXt</a>や疎行列向けの<a href="https://docs.nvidia.com/cuda/cusparse/index.html">cuSPARSE</a>というライブラリもありますので、いろいろと検討してみてください。あと、CUDAライブラリではないですけど、<a href="https://www.preferred.jp/ja/projects/cupy/">CuPy</a>もとても良い。Pythonのライブラリで、結構速くて、NumPy互換なのでとてもプログラミングがとにかく楽。<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy">CuPyを使っで今回の行列演算をやってみた</a>ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいに簡単にプログラミングできました。</p>
-<p>いやぁ、CUDA＋ライブラリ、楽ちんにいろいろと高速化ができて、とにかく面白いですな。</p>
+<p>というわけで、ほら、行列演算をそこそこ簡単にものすごく高速化できたでしょ？　行列演算が遅いという場合はぜひcuBLASを使ってしてみてください。</p>
+<p>他にも、複数のGPUに対応した<a href="https://docs.nvidia.com/cuda/cublas/index.html#using-the-cublasXt-api">cuBLASXt</a>や疎行列向けの<a href="https://docs.nvidia.com/cuda/cusparse/index.html">cuSPARSE</a>というライブラリもありますので、いろいろと検討してみてください。あと、CUDAライブラリではないですけど、<a href="https://www.preferred.jp/ja/projects/cupy/">CuPy</a>もとても良い。Pythonのライブラリで、結構速くて、NumPy互換なのでとてもプログラミングがとにかく楽。<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cupy">CuPyを使っで今回の行列演算をやってみた</a>ら0.019044秒だったのでC++版の5.0倍くらいは高速で、しかも笑っちゃうくらいに簡単にプログラミングできました。</p>
+<p>いやぁ、CUDA（＋ライブラリ）は楽ちんにいろいろと高速化ができて、とにかく面白いですな。</p>
 </article>
 </body>
 </html>

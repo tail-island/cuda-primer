@@ -1,1 +1,1 @@
-pandoc -f markdown_github --standalone --to html5 --css https://tail-island.github.io/cuda-primer/css/github-markdown.css -H ./res/github-markdown-h.html -B ./res/github-markdown-b.html -A ./res/github-markdown-a.html -M pagetitle="CUDAプログラミング・ガイド" *.md > ../index.html
+pandoc -f gfm --standalone --to html5 --css https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css -H ./res/github-markdown-h.html -B ./res/github-markdown-b.html -A ./res/github-markdown-a.html -M pagetitle="CUDAプログラミング・ガイド" *.md > ../index.html
