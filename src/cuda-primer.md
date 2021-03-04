@@ -95,7 +95,7 @@ $ make && ./mandelbrot | python plot.py
 
 はい。きれいにマンデルブロ集合が表示されましたのでプログラムはこれで正しそう。で、C++でマンデルブロ集合生成にかかった時間は、私の型落ちCPUのPCで0.101171秒でした。
 
-上のプログラムの`mandelbrot_set()`関数（2つある内の上の方）を[CUDAでGPU上で実行](https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda-ng)させてみます。コードは[こんな感じ](https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda-ng/main.cu)。
+では、上のプログラムの`mandelbrot_set()`関数（2つある内の上の方）を[CUDAでGPU上で実行](https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda-ng)させてみます。コードは[こんな感じ](https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda-ng/main.cu)。
 
 ~~~c++
 #include <complex>

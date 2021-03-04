@@ -184,7 +184,7 @@
 <pre class="shell"><code>$ make &amp;&amp; ./mandelbrot | python plot.py</code></pre>
 <p><img src="./image/mandelbrot-set.png" alt="マンデルブロ集合" /></p>
 <p>はい。きれいにマンデルブロ集合が表示されましたのでプログラムはこれで正しそう。で、C++でマンデルブロ集合生成にかかった時間は、私の型落ちCPUのPCで0.101171秒でした。</p>
-<p>上のプログラムの<code>mandelbrot_set()</code>関数（2つある内の上の方）を<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda-ng">CUDAでGPU上で実行</a>させてみます。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda-ng/main.cu">こんな感じ</a>。</p>
+<p>では、上のプログラムの<code>mandelbrot_set()</code>関数（2つある内の上の方）を<a href="https://github.com/tail-island/cuda-primer/tree/main/mandelbrot-cuda-ng">CUDAでGPU上で実行</a>させてみます。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/mandelbrot-cuda-ng/main.cu">こんな感じ</a>。</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iterator&gt;</span></span>
