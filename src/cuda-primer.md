@@ -711,7 +711,7 @@ inline auto matmul_ng(const std::vector<float>& matrix_a, const std::vector<floa
 
 時間を計測してみます。最初のコードの場合の実行時間は0.239278秒で、改良したコードの実行感は0.0946229秒。39.5%の処理時間で完了しているので、たったこれだけの修正で2.5倍に高速化されました！　今どきのプログラミングでは、メモリ・アクセスの効率化がとても重要なんですな。
 
-でも、上のコードと同じことをCUDAでもやるのは実は難しいんですよ。まずは、[効率が良くないバージョンをCUDA化](https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cuda)してみます。コードは[こんな感じ](https://github.com/tail-island/cuda-primer/blob/main/matrix-operation-cuda/main.cu)。
+でも、上のコードと同じことをCUDAでもやっては駄目なんです。確認のために、まずは、[C++では効率が良くなかったバージョンをCUDA化](https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cuda)します。コードは[こんな感じ](https://github.com/tail-island/cuda-primer/blob/main/matrix-operation-cuda/main.cu)。
 
 ~~~c++
 #include <iostream>

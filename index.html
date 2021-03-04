@@ -712,7 +712,7 @@
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>時間を計測してみます。最初のコードの場合の実行時間は0.239278秒で、改良したコードの実行感は0.0946229秒。39.5%の処理時間で完了しているので、たったこれだけの修正で2.5倍に高速化されました！　今どきのプログラミングでは、メモリ・アクセスの効率化がとても重要なんですな。</p>
-<p>でも、上のコードと同じことをCUDAでもやるのは実は難しいんですよ。まずは、<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cuda">効率が良くないバージョンをCUDA化</a>してみます。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/matrix-operation-cuda/main.cu">こんな感じ</a>。</p>
+<p>でも、上のコードと同じことをCUDAでもやっては駄目なんです。確認のために、まずは、<a href="https://github.com/tail-island/cuda-primer/tree/main/matrix-operation-cuda">C++では効率が良くなかったバージョンをCUDA化</a>します。コードは<a href="https://github.com/tail-island/cuda-primer/blob/main/matrix-operation-cuda/main.cu">こんな感じ</a>。</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
