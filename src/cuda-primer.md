@@ -891,11 +891,11 @@ BLASでの行列の掛け算はGEMM（GEneral Matrix-Matrix multiplication）で
 
 ~~~c++
 // 普通のC++で行列を作る。
-auto m = std::vector<float>(Y * X);
+auto m = std::vector<float>(y_size * x_size);
 
-for (auto y = 0; y < Y; ++y) {  // まずは行のループ
-    for (auto x = 0; x < X; ++x) {  // その中で列のループ
-        m[y * X + x] = ...
+for (auto y = 0; y < y_size; ++y) {  // まずは行のループ
+    for (auto x = 0; x < x_size; ++x) {  // その中で列のループ
+        m[y * x_size + x] = ...
     }
 }
 ~~~
@@ -904,11 +904,11 @@ cuBLASを使う場合は、列優先なので以下のようなコードにな�
 
 ~~~c++
 // 列優先の行列を作る。
-auto m = std::vector<float>(X * Y);
+auto m = std::vector<float>(x_size * y_size);
 
-for (auto x = 0; x < X; ++x) {  // まずは列のループ
-    for (auto y = 0; y < Y; ++y) {  // その中で行のループ
-        m[x * Y + y] = ...
+for (auto x = 0; x < x_size; ++x) {  // まずは列のループ
+    for (auto y = 0; y < y_size; ++y) {  // その中で行のループ
+        m[x * y_size + y] = ...
     }
 }
 ~~~
